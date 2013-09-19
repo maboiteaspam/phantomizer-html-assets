@@ -1,0 +1,29 @@
+{
+    "name": "phantomizer-html-assets",
+    "version": "0.1.0",
+    "private": true,
+    "description": "HTML assets minification support for phantomizer",
+    "keywords": "",
+    "bugs": {
+        "url" : "http://github.com/maboiteaspam/phantomizer-html-assets/issues",
+        "email" : "none@host.com"
+    },
+    "license" : "mit",
+    "directories.lib": "lib/",
+    "repository" :{
+        "type" : "git",
+        "url" : "http://github.com/maboiteaspam/phantomizer-html-assets.git"
+    },
+    "dependencies": {
+        "grunt": "0.4.x"
+        ,"phantomizer-libutil": "http://github.com/maboiteaspam/phantomizer-libutil.git"
+        ,"phantomizer-manifest": "http://github.com/maboiteaspam/phantomizer-manifest.git"
+        ,"phantomizer-imgopt": "http://github.com/maboiteaspam/phantomizer-imgopt.git"
+        ,"phantomizer-uglifyjs": "http://github.com/maboiteaspam/phantomizer-uglifyjs.git"
+        ,"phantomizer-requirejs": "http://github.com/maboiteaspam/phantomizer-requirejs.git"
+        ,"phantomizer-gm": "http://github.com/maboiteaspam/phantomizer-gm.git"
+        ,"phantomizer-grunt": "http://github.com/maboiteaspam/phantomizer-grunt.git"
+    },
+    "devDependencies": {
+    }
+}
