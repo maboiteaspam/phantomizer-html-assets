@@ -226,26 +226,26 @@ module.exports = function(grunt) {
 
             var current_html_in_file = in_file+".tmp"
             var current_html_meta_file = meta_file+".tmp"
-            grunt.file.write(current_html_in_file, html_content)
-            var current_html_out_file = out_file
+            grunt.file.write(current_html_in_file, html_content);
+            var current_html_out_file = out_file;
             // create manifest file
             if( manifest == true ){
                 current_html_out_file = current_html_out_file+".no_manifest"
                 current_html_meta_file = current_html_meta_file+".no_manifest"
                 queue_html_manifest( sub_tasks, current_target, out_path, meta_dir, current_html_meta_file, current_html_out_file, in_request, current_html_in_file )
-                current_html_in_file = current_html_out_file
-                current_html_out_file = out_file
-                grunt.log.ok("html manifest")
+                current_html_in_file = current_html_out_file;
+                current_html_out_file = out_file;
+                grunt.log.ok("html manifest ")
             }
 
             // minify html
             if( htmlcompressor == true ){
-                current_html_out_file = current_html_out_file+".no_min"
-                current_html_meta_file = current_html_meta_file+".no_min"
-                queue_html_min( sub_tasks, current_target, current_html_out_file, meta_dir, current_html_meta_file, current_html_in_file )
-                current_html_in_file = current_html_out_file
-                current_html_out_file = out_file
-                grunt.log.ok("html minified")
+                current_html_out_file = current_html_out_file+".no_min";
+                current_html_meta_file = current_html_meta_file+".no_min";
+                queue_html_min( sub_tasks, current_target, current_html_out_file, meta_dir, current_html_meta_file, current_html_in_file );
+                current_html_in_file = current_html_out_file;
+                current_html_out_file = out_file;
+                grunt.log.ok("html minified");
             }
 
             queue_grunt_copy( meta_dir, sub_tasks, current_target, current_html_out_file, current_html_in_file )
@@ -316,12 +316,12 @@ module.exports = function(grunt) {
         task_options[jit_target].options.out_file = out_file;
         task_options[jit_target].options.meta_file = meta_file;
         task_options[jit_target].options.base_url = path.dirname(in_request);
-        task_options[jit_target].options.manifest_file = out_dir+in_request+"-"+current_target+".appcache"
-        task_options[jit_target].options.manifest_meta = meta_dir+in_request+"-"+current_target+".appcache.meta"
-        task_options[jit_target].options.manifest_url = in_request+"-"+current_target+".appcache"
+        task_options[jit_target].options.manifest_file = out_dir+in_request+"-"+current_target+".appcache";
+        task_options[jit_target].options.manifest_meta = in_request+"-"+current_target+".appcache.meta";
+        task_options[jit_target].options.manifest_url = in_request+"-"+current_target+".appcache";
 
-        grunt.config.set(task_name, task_options)
-        sub_tasks.push( task_name+":"+jit_target )
+        grunt.config.set(task_name, task_options);
+        sub_tasks.push( task_name+":"+jit_target );
     }
 
     function queue_img_opt( sub_tasks, current_target, out_path, meta_dir, paths, in_file, asrc, osrc, options ){
