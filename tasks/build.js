@@ -239,7 +239,7 @@ module.exports = function(grunt) {
             }
 
             // minify html
-            if( htmlcompressor == true ){
+            if( htmlcompressor == true && false ){
                 current_html_out_file = current_html_out_file+".no_min";
                 current_html_meta_file = current_html_meta_file+".no_min";
                 queue_html_min( sub_tasks, current_target, current_html_out_file, meta_dir, current_html_meta_file, current_html_in_file );
