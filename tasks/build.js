@@ -38,6 +38,7 @@ module.exports = function(grunt) {
         var current_grunt_task  = this.nameArgs;
         var current_target      = this.target;
         var current_grunt_opt   = this.options();
+        var user_config = grunt.config();
 
         if( meta_manager.is_fresh(meta_file) == false ){
 
@@ -45,6 +46,9 @@ module.exports = function(grunt) {
 
             if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
                 deps.push(process.cwd()+"/Gruntfile.js")
+            }
+            if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
+                deps.push( user_config.project_dir+"/../config.json")
             }
             deps.push(in_file)
 
