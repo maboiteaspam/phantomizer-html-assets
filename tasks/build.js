@@ -198,7 +198,7 @@ module.exports = function(grunt) {
 
                         queue_requirejs_build(sub_tasks, current_target, out_path+osrc, osrc+".meta", msrc)
 
-                        var node_ = "<script src='"+osrc+"'></script>"
+                        var node_ = "<script src='"+osrc+"' optimized='true'></script>"
                         html_content = html_content.replace(node.node, node_)
                     })
                     if( rscripts.length > 0 ){
