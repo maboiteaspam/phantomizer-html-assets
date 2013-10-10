@@ -192,13 +192,17 @@ module.exports = function(grunt) {
                     var rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
                     ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
                         deps.push(node_file)
-                        var osrc = node.asrc.replace(".js",file_suffix+".js")
+                        var tsrc = node.asrc.replace(".js",file_suffix+".js")
                         var msrc = node.asrc.replace(".js","")
-                        msrc = msrc.replace(options.requirejs_baseUrl, "")
+                        msrc = msrc.replace(options.requirejs_baseUrl, "");
 
-                        queue_requirejs_build(sub_tasks, current_target, out_path+osrc, osrc+".meta", msrc)
+                        var p_meta_file = node.asrc+".meta";
+                        if(  meta_manager.has( p_meta_file ) ){
+                        }
 
-                        var node_ = "<script src='"+osrc+"' optimized='true'></script>"
+                        queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+".meta", msrc)
+
+                        var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
                         html_content = html_content.replace(node.node, node_)
                     })
                     if( rscripts.length > 0 ){
@@ -215,12 +219,13 @@ module.exports = function(grunt) {
                 ForEachNodeFileFound(scripts, paths, function(n, node, node_file){
                     if( node_file.indexOf("-min") == -1 && node_file.indexOf(".min") == -1 && node_file.indexOf(file_suffix) == -1 ){
                         deps.push(node_file)
-                        var osrc = scripts[n].src
-                        var tsrc = osrc.replace(file_suffix+".js", ".js")
-                        tsrc = tsrc.replace(".js", "-min"+file_suffix+".js")
-                        queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+".meta", node_file, osrc )
-                        var node_ = "<script src='"+tsrc+"'></script>"
-                        html_content = html_content.replace(scripts[n].node, node_)
+                        var osrc = scripts[n].src;
+                        var tsrc = osrc.replace(file_suffix+".js", ".js");
+                        tsrc = tsrc.replace(".js", "-min"+file_suffix+".js");
+
+                        queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+".meta", node_file, osrc );
+                        var node_ = "<script src='"+tsrc+"'></script>";
+                        html_content = html_content.replace(scripts[n].node, node_);
                     }else{
                         grunt.log.ok("Already minified\n\t"+node_file)
                     }
