@@ -16,13 +16,13 @@
     },
     "dependencies": {
         "grunt": "0.4.x",
-        "phantomizer-libutil": "maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-libutil#010b357",
-        "phantomizer-manifest": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-manifest#a8b9923",
-        "phantomizer-imgopt": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-imgopt#6fcc43b",
-        "phantomizer-uglifyjs": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-uglifyjs#4c01e54",
-        "phantomizer-requirejs": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-requirejs#4235a03",
-        "phantomizer-gm": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-gm#ed45d4f",
-        "phantomizer-grunt": "maboiteaspam/maboiteaspam/maboiteaspam/maboiteaspam/phantomizer-grunt#ca41915"
+        "phantomizer-libutil": "maboiteaspam/phantomizer-libutil#010b357",
+        "phantomizer-manifest": "maboiteaspam/phantomizer-manifest#a8b9923",
+        "phantomizer-imgopt": "maboiteaspam/phantomizer-imgopt#6fcc43b",
+        "phantomizer-uglifyjs": "maboiteaspam/phantomizer-uglifyjs#4c01e54",
+        "phantomizer-requirejs": "maboiteaspam/phantomizer-requirejs#4235a03",
+        "phantomizer-gm": "maboiteaspam/phantomizer-gm#ed45d4f",
+        "phantomizer-grunt": "maboiteaspam/phantomizer-grunt#ca41915"
     },
     "devDependencies": {}
 }
