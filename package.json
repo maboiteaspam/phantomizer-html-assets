@@ -16,13 +16,7 @@
     },
     "dependencies": {
         "grunt": "0.4.x",
-        "phantomizer-libutil": "git://github.com/maboiteaspam/phantomizer-libutil.git",
-        "phantomizer-manifest": "git://github.com/maboiteaspam/phantomizer-manifest.git",
-        "phantomizer-imgopt": "git://github.com/maboiteaspam/phantomizer-imgopt.git",
-        "phantomizer-uglifyjs": "git://github.com/maboiteaspam/phantomizer-uglifyjs.git",
-        "phantomizer-requirejs": "git://github.com/maboiteaspam/phantomizer-requirejs.git",
-        "phantomizer-gm": "git://github.com/maboiteaspam/phantomizer-gm.git",
-        "phantomizer-grunt": "git://github.com/maboiteaspam/phantomizer-grunt.git"
+        "phantomizer-libutil": "git://github.com/maboiteaspam/phantomizer-libutil.git"
     },
     "devDependencies": {}
 }
