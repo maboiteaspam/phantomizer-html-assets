@@ -16,13 +16,13 @@
     },
     "dependencies": {
         "grunt": "0.4.x",
-        "phantomizer-libutil": "maboiteaspam/phantomizer-libutil#010b357",
-        "phantomizer-manifest": "maboiteaspam/phantomizer-manifest#a8b9923",
-        "phantomizer-imgopt": "maboiteaspam/phantomizer-imgopt#6fcc43b",
-        "phantomizer-uglifyjs": "maboiteaspam/phantomizer-uglifyjs#4c01e54",
-        "phantomizer-requirejs": "maboiteaspam/phantomizer-requirejs#4235a03",
-        "phantomizer-gm": "maboiteaspam/phantomizer-gm#ed45d4f",
-        "phantomizer-grunt": "maboiteaspam/phantomizer-grunt#ca41915"
+        "phantomizer-libutil": "git://github.com/maboiteaspam/phantomizer-libutil.git",
+        "phantomizer-manifest": "git://github.com/maboiteaspam/phantomizer-manifest.git",
+        "phantomizer-imgopt": "git://github.com/maboiteaspam/phantomizer-imgopt.git",
+        "phantomizer-uglifyjs": "git://github.com/maboiteaspam/phantomizer-uglifyjs.git",
+        "phantomizer-requirejs": "git://github.com/maboiteaspam/phantomizer-requirejs.git",
+        "phantomizer-gm": "git://github.com/maboiteaspam/phantomizer-gm.git",
+        "phantomizer-grunt": "git://github.com/maboiteaspam/phantomizer-grunt.git"
     },
     "devDependencies": {}
 }
