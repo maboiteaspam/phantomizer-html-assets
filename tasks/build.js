@@ -263,12 +263,12 @@ module.exports = function(grunt) {
 
 
             grunt.file.write(out_file, html_content);
-            grunt.log.ok("File created\n\t"+in_file)
+            grunt.log.ok("HTML File created\n\t"+out_file)
 
             // create manifest file
             if( manifest == true ){
-                queue_html_manifest( sub_tasks, current_target, out_path, meta_dir, meta_file, out_file, in_request, in_file )
-                grunt.log.ok("html manifest ")
+                queue_html_manifest( sub_tasks, current_target, out_path, meta_dir, meta_file, out_file, in_request, out_file )
+                grunt.log.ok("html manifest queued")
             }
 
 
