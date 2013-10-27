@@ -11,26 +11,48 @@ module.exports = function(grunt) {
         var meta_factory = ph_libutil.meta;
         var html_utils = ph_libutil.html_utils;
 
-        var options = this.options();
+        var options = this.options({
+            meta_file:'',
+            in_file:'',
+            out:'',
+            in_request:'/',
+            file_suffix:'-opt',
+
+            meta_dir:'<%= meta_dir %>',
+            out_path:'<%= out_path %>',
+            paths:'<%= paths %>',
+
+            manifest:false,
+            requirejs_src:false,
+            requirejs_burl:'',
+            uglify_js:false,
+            imgcompressor:false,
+            image_merge:false,
+
+            as_of_target: this.target
+        });
         grunt.verbose.writeflags(options,"options");
 
         var meta_file       = options.meta_file;
         var in_file         = options.in_file;
+        var in_request      = options.in_request;
         var out_file        = options.out;
+        var file_suffix     = options.file_suffix;
+
         var meta_dir        = options.meta_dir;
         var out_path        = options.out_path;
         var paths           = options.paths;
-        var manifest        = options.manifest || false;
-        var requirejs_src   = options.requirejs_src || false;
+
+        var manifest        = options.manifest;
+        var requirejs_src   = options.requirejs_src;
         if( requirejs_src.substring ) requirejs_src = [requirejs_src];
         var requirejs_burl  = options.requirejs_baseUrl;
-        var uglify_js       = options.uglify_js || false;
-        var htmlcompressor  = options.htmlcompressor || false;
-        var imgcompressor   = options.imgcompressor || false;
-        var image_merge     = options.image_merge || false;
-        var file_suffix     = !options.file_suffix? "-opt" :""+options.file_suffix;
-        var in_request      = options.in_request || "/";
-        var current_target  = options.real_current_target;
+
+
+        var current_target  = options.as_of_target;
+
+        console.log(options)
+
         var base_url = path.dirname(in_request);
         var deps = [];
         var sub_tasks = [];
@@ -68,71 +90,17 @@ module.exports = function(grunt) {
                 wihtout having to parse the html string on every changes
             */
 
-            // look up for scripts to strip / merge / inject
-
+// look up for scripts to strip / merge / inject
             html_content = html_clean_css(html_content)
             grunt.log.ok("html cleaned")
 
 
-            if( image_merge ){
+            if( options.image_merge ){
                 queue_img_merge(sub_tasks, current_target )
             }
             sub_tasks.push( "throttle:20" );
 
-            // given a list of nodes, identify and merge those which has a corresponding file on drive
-            var ForEachNodeFileFound = function( nodes, paths, cb ){
-                for( var n in nodes ){
-                    if( nodes[n].has_domain == false ){
-                        var node_file = nodes[n].asrc
-                        var _in_file = find_in_paths(paths,node_file)
-                        if( _in_file != false ){
-                            node_file = _in_file
-                            cb(n, nodes[n], node_file)
-                        }else{
-                            grunt.log.error("File is missing\n\t"+node_file)
-                        }
-                    }
-                }
-            };
-            // given a list of nodes, searches for those which holds css reference
-            var ForEachRuleFileFound = function( nodes, paths, cb ){
-                for( var n in nodes ){
-                    for( var k in nodes[n].imports ){
-                        var import_rule = nodes[n].imports[k]
-                        if( import_rule.has_domain == false ){
-                            var node_file = import_rule.asrc
-                            var _in_file = find_in_paths(paths,node_file)
-                            if( _in_file != false ){
-                                node_file = _in_file
-                                cb(n, nodes[n], k, import_rule, node_file)
-                            }else{
-                                grunt.log.error("File is missing\n\t"+node_file)
-                            }
-                        }
-                    }
-                }
-            };
-            // given a list of nodes, searches for those which are css nodes, and that has img 
-            var ForEachImageFileFound = function( nodes, paths, cb ){
-                for( var n in nodes ){
-                    for( var k in nodes[n].imgs ){
-                        var import_img = nodes[n].imgs[k]
-                        if( import_img.has_domain == false ){
-                            var node_file = import_img.asrc
-                            var _in_file = find_in_paths(paths,node_file)
-                            if( _in_file != false ){
-                                node_file = _in_file
-                                cb(n, nodes[n], k, import_img, node_file)
-                            }else{
-                                grunt.log.error("File is missing\n\t"+node_file)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // look up for css file to compile
-            // <link rel="stylesheet" href="?">
+// look up for css file to compile <link rel="stylesheet" href="?">
             var lnodes = html_utils.find_link_nodes(html_content, base_url)
             ForEachNodeFileFound(lnodes, paths, function(n, node, node_file){
                 deps.push(node_file);
@@ -145,12 +113,12 @@ module.exports = function(grunt) {
                     grunt.log.ok("Already minified\n\t"+osrc)
                 }
 
-                if( image_merge && osrc.indexOf("-im") == -1 ){
+                if( options.image_merge && osrc.indexOf("-im") == -1 ){
                     var tsrc = osrc.replace(file_suffix+".css", ".css")
                     tsrc = tsrc.replace(".css", "-im"+file_suffix+".css")
                     queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths )
                     osrc = tsrc
-                }else if(image_merge){
+                }else if(options.image_merge){
                     grunt.log.ok("Already merged image\n\t"+osrc)
                 }
 
@@ -158,7 +126,7 @@ module.exports = function(grunt) {
             })
             grunt.log.ok("<link /> built")
 
-            // look up for <style /> nodes
+// look up for <style /> nodes
             var snodes = html_utils.find_style_nodes(html_content, base_url)
             ForEachRuleFileFound(snodes, paths, function(n, node, k, rule, node_file){
                 deps.push(node_file)
@@ -170,7 +138,7 @@ module.exports = function(grunt) {
                 }else{
                     grunt.log.ok("Already minified\n\t"+osrc)
                 }
-                if( image_merge && osrc.indexOf("-im") == -1 ){
+                if( options.image_merge && osrc.indexOf("-im") == -1 ){
                     var tsrc = osrc.replace(file_suffix+".css", ".css")
                     tsrc = tsrc.replace(".css", "-im"+file_suffix+".css")
                     queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths )
@@ -185,36 +153,44 @@ module.exports = function(grunt) {
             })
             grunt.log.ok("<style /> built")
 
-            // look up for script files to compile with requirejs
+
+
+// look up for script files to compile with requirejs
             if( requirejs_src != false ){
                 var found_rjs = false;
                 for( var nn in requirejs_src ){
+// look up for a data-main attached to requirejs url
                     var rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
-                    ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
-                        deps.push(node_file)
-                        var tsrc = node.asrc.replace(".js",file_suffix+".js")
-                        var msrc = node.asrc.replace(".js","")
-                        msrc = msrc.replace(options.requirejs_baseUrl, "");
-
-                        var p_meta_file = node.asrc+".meta";
-                        if(  meta_manager.has( p_meta_file ) ){
-                        }
-
-                        queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+".meta", msrc)
-
-                        var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
-                        html_content = html_content.replace(node.node, node_)
-                    })
                     if( rscripts.length > 0 ){
-                        grunt.log.ok("building requirejs scripts")
-                        found_rjs = true
+                        grunt.log.ok("building requirejs scripts");
+                        found_rjs = true;
+
+                        ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
+                            deps.push(node_file)
+                            var tsrc = node.asrc.replace(".js",file_suffix+".js")
+                            var msrc = node.asrc.replace(".js","")
+                            msrc = msrc.replace(options.requirejs_baseUrl, "");
+
+                            var p_meta_file = node.asrc+".meta";
+                            if(  meta_manager.has( p_meta_file ) ){
+                                // nothing ?
+                            }
+
+                            queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+".meta", msrc);
+
+// apply the optimized version of the script in HTML
+                            var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
+                            html_content = html_content.replace(node.node, node_)
+                        });
+
                         break;
                     }
                 }
             }
 
-            // look up for script files to compile with uglifyjs
-            if( uglify_js ){
+
+// look up for script files to compile with uglifyjs
+            if( options.uglify_js ){
                 var scripts = html_utils.find_scripts_nodes(html_content, base_url)
                 ForEachNodeFileFound(scripts, paths, function(n, node, node_file){
                     if( node_file.indexOf("-min") == -1 && node_file.indexOf(".min") == -1 && node_file.indexOf(file_suffix) == -1 ){
@@ -226,34 +202,36 @@ module.exports = function(grunt) {
                         queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+".meta", node_file, osrc );
                         var node_ = "<script src='"+tsrc+"'></script>";
                         html_content = html_content.replace(scripts[n].node, node_);
+                        grunt.log.ok("Uglifying "+osrc);
                     }else{
                         grunt.log.ok("Already minified\n\t"+node_file)
                     }
                 })
-                grunt.log.ok("scripts minified")
             }
 
-            // look up for <img src="?" /> file to compile
-            if( imgcompressor ){
+// look up for <img src="?" /> file to compile
+            if( options.imgcompressor ){
                 var inodes = html_utils.find_img_nodes(html_content, base_url);
                 ForEachNodeFileFound(inodes, paths, function(n, node, node_file){
                     if( node_file.match("\.(png|jpeg|jpg)$") != null && node_file.indexOf(file_suffix) == -1 ){
                         deps.push(node_file)
                         var osrc = node.src.replace(new RegExp("\.(png|jpeg|jpg)$"),file_suffix+".$1")
                         queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options )
-                        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) )
+                        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+                        grunt.log.ok("Compressing "+node.src);
                     }else{
                         grunt.log.ok("Already minified\n\t"+node_file)
                     }
                 })
-                // look up for background:url() file to compile
+// look up for background:url() file to compile
                 var inodes = html_utils.find_style_nodes(html_content, base_url);
                 ForEachImageFileFound(inodes, paths, function(n, node, node_file){
                     if( node_file.match("\.(png|jpeg|jpg)$") != null && node_file.indexOf(file_suffix) == -1 ){
                         deps.push(node_file)
                         var osrc = node.src.replace(new RegExp("\.(png|jpeg|jpg)$"),file_suffix+".$1")
                         queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options )
-                        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) )
+                        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+                        grunt.log.ok("Compressing "+node.src);
                     }else{
                         grunt.log.ok("Already minified\n\t"+node_file)
                     }
@@ -262,29 +240,85 @@ module.exports = function(grunt) {
             }
 
 
+// write optimized html file
             grunt.file.write(out_file, html_content);
             grunt.log.ok("HTML File created\n\t"+out_file)
 
-            // create manifest file
+// create manifest file
             if( manifest == true ){
                 queue_html_manifest( sub_tasks, current_target, out_path, meta_dir, meta_file, out_file, in_request, out_file )
                 grunt.log.ok("html manifest queued")
             }
 
 
-            //queue_grunt_copy( meta_dir, sub_tasks, current_target, out_file, in_file )
+// queue next tasks
             grunt.task.run( sub_tasks );
 
-            // create a cache entry, so that later we can regen or check freshness
+// create a cache entry, so that later we can regen or check freshness
             var entry = meta_manager.load(meta_file);
             deps.push(__filename)
             entry.load_dependencies(deps);
             entry.require_task(current_grunt_task, current_grunt_opt);
             entry.save(meta_file);
+
         }else{
             grunt.log.ok("your build is fresh !\n\t"+in_request)
         }
     });
+
+
+
+// given a list of nodes, identify and merge those which has a corresponding file on drive
+    function ForEachNodeFileFound ( nodes, paths, cb ){
+        for( var n in nodes ){
+            if( nodes[n].has_domain == false ){
+                var node_file = nodes[n].asrc
+                var _in_file = find_in_paths(paths,node_file)
+                if( _in_file != false ){
+                    node_file = _in_file
+                    cb(n, nodes[n], node_file)
+                }else{
+                    grunt.log.error("File is missing\n\t"+node_file)
+                }
+            }
+        }
+    };
+// given a list of nodes, searches for those which holds css reference
+    function ForEachRuleFileFound ( nodes, paths, cb ){
+        for( var n in nodes ){
+            for( var k in nodes[n].imports ){
+                var import_rule = nodes[n].imports[k]
+                if( import_rule.has_domain == false ){
+                    var node_file = import_rule.asrc
+                    var _in_file = find_in_paths(paths,node_file)
+                    if( _in_file != false ){
+                        node_file = _in_file
+                        cb(n, nodes[n], k, import_rule, node_file)
+                    }else{
+                        grunt.log.error("File is missing\n\t"+node_file)
+                    }
+                }
+            }
+        }
+    };
+// given a list of nodes, searches for those which are css nodes, and that has img
+    function ForEachImageFileFound ( nodes, paths, cb ){
+        for( var n in nodes ){
+            for( var k in nodes[n].imgs ){
+                var import_img = nodes[n].imgs[k]
+                if( import_img.has_domain == false ){
+                    var node_file = import_img.asrc
+                    var _in_file = find_in_paths(paths,node_file)
+                    if( _in_file != false ){
+                        node_file = _in_file
+                        cb(n, nodes[n], k, import_img, node_file)
+                    }else{
+                        grunt.log.error("File is missing\n\t"+node_file)
+                    }
+                }
+            }
+        }
+    }
 
 
     function must_find_in_paths(paths, src){
