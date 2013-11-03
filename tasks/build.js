@@ -31,7 +31,7 @@ module.exports = function(grunt) {
 
             as_of_target: this.target
         });
-        grunt.verbose.writeflags(options,"options");
+        grunt.verbose.writeflags(options,"htmlassets");
 
         var meta_file       = options.meta_file;
         var in_file         = options.in_file;
@@ -50,8 +50,6 @@ module.exports = function(grunt) {
 
 
         var current_target  = options.as_of_target;
-
-        console.log(options)
 
         var base_url = path.dirname(in_request);
         var deps = [];
@@ -108,7 +106,7 @@ module.exports = function(grunt) {
                 var osrc = node.src;
                 if( osrc.indexOf("-min") == -1 && osrc.indexOf(".min") == -1 && osrc.indexOf(file_suffix) == -1 ){
                     osrc = node.src.replace(".css",file_suffix+".css")
-                    queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+".meta", node_file, osrc)
+                    queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc)
                 }else{
                     grunt.log.ok("Already minified\n\t"+osrc)
                 }
@@ -134,7 +132,7 @@ module.exports = function(grunt) {
                 var osrc = rule.src;
                 if( osrc.indexOf("-min") == -1 && osrc.indexOf(".min") == -1 && osrc.indexOf(file_suffix) == -1 ){
                     osrc = rule.src.replace(".css",file_suffix+".css");
-                    queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+".meta", node_file, osrc);
+                    queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
                 }else{
                     grunt.log.ok("Already minified\n\t"+osrc)
                 }
@@ -171,12 +169,12 @@ module.exports = function(grunt) {
                             var msrc = node.asrc.replace(".js","")
                             msrc = msrc.replace(options.requirejs_baseUrl, "");
 
-                            var p_meta_file = node.asrc+".meta";
+                            var p_meta_file = node.asrc+"";
                             if(  meta_manager.has( p_meta_file ) ){
                                 // nothing ?
                             }
 
-                            queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+".meta", msrc);
+                            queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+"", msrc);
 
 // apply the optimized version of the script in HTML
                             var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
@@ -199,7 +197,7 @@ module.exports = function(grunt) {
                         var tsrc = osrc.replace(file_suffix+".js", ".js");
                         tsrc = tsrc.replace(".js", "-min"+file_suffix+".js");
 
-                        queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+".meta", node_file, osrc );
+                        queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+"", node_file, osrc );
                         var node_ = "<script src='"+tsrc+"'></script>";
                         html_content = html_content.replace(scripts[n].node, node_);
                         grunt.log.ok("Uglifying "+osrc);
@@ -361,7 +359,7 @@ module.exports = function(grunt) {
         task_options[jit_target].options.meta_file = meta_file;
         task_options[jit_target].options.base_url = path.dirname(in_request);
         task_options[jit_target].options.manifest_file = out_dir+in_request+"-"+current_target+".appcache";
-        task_options[jit_target].options.manifest_meta = in_request+"-"+current_target+".appcache.meta";
+        task_options[jit_target].options.manifest_meta = in_request+"-"+current_target+".appcache";
         task_options[jit_target].options.manifest_url = in_request+"-"+current_target+".appcache";
 
         grunt.config.set(task_name, task_options);
@@ -446,7 +444,7 @@ module.exports = function(grunt) {
         task_options[jit_target].options.in_request = osrc;
         task_options[jit_target].options.meta_dir = meta_dir;
         task_options[jit_target].options.out_file = out_dir+tsrc;
-        task_options[jit_target].options.meta_file = tsrc+".meta";
+        task_options[jit_target].options.meta_file = tsrc+"";
         task_options[jit_target].options.paths = paths;
         task_options[jit_target].options.map = {};
         for(var tgt_file in map ){
