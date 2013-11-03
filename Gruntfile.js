@@ -65,7 +65,7 @@ module.exports = function(grunt) {
                     ,"out": "<%= out_dir %>/index.html"
                     ,"out_path": "<%= out_dir %>/"
                     ,"meta_path": "<%= meta_dir %>/"
-                    ,"meta": "<%= meta_dir %>/index-build.html.meta"
+                    ,"meta": "<%= meta_dir %>/index-build.html"
                 }
             }
         }
