@@ -9,6 +9,7 @@ module.exports = function(grunt) {
 
         var ph_libutil = require("phantomizer-libutil");
         var meta_factory = ph_libutil.meta;
+        var phantomizer_helper = ph_libutil.phantomizer_helper;
         var html_utils = ph_libutil.html_utils;
 
         var options = this.options({
@@ -47,6 +48,7 @@ module.exports = function(grunt) {
         var requirejs_src   = options.requirejs_src;
         if( requirejs_src.substring ) requirejs_src = [requirejs_src];
         var requirejs_burl  = options.requirejs_baseUrl;
+        var requirejs_paths  = options.requirejs_paths;
 
 
         var current_target  = options.as_of_target;
@@ -178,6 +180,7 @@ module.exports = function(grunt) {
 
 // apply the optimized version of the script in HTML
                             var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
+                            html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), "")
                             html_content = html_content.replace(node.node, node_)
                         });
 
