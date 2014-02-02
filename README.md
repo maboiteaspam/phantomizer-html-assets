@@ -10,6 +10,12 @@ Find out more about Phantomizer
 
 http://github.com/maboiteaspam/phantomizer
 
+# Documentation Index
+
+http://maboiteaspam.github.io/phantomizer-html-assets/
+
+http://maboiteaspam.github.io/phantomizer-html-assets/documentation/build.html
+
 
 #### Example config
 
