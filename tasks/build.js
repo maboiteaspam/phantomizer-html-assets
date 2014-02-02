@@ -46,7 +46,7 @@ module.exports = function(grunt) {
 
         var manifest        = options.manifest;
         var requirejs_src   = options.requirejs_src;
-        if( requirejs_src.substring ) requirejs_src = [requirejs_src];
+        if( requirejs_src && requirejs_src.substring ) requirejs_src = [requirejs_src];
         var requirejs_burl  = options.requirejs_baseUrl;
         var requirejs_paths  = options.requirejs_paths;
 
