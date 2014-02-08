@@ -41,6 +41,7 @@ module.exports = function(grunt) {
     var meta_dir        = options.meta_dir;
     var out_path        = options.out_path;
 
+      var current_target  = options.as_of_target;
     var current_grunt_task  = this.nameArgs;
     var current_grunt_opt   = this.options();
     var user_config = grunt.config();
@@ -57,6 +58,7 @@ module.exports = function(grunt) {
       user_config.project_dir,
       current_grunt_task,
       current_grunt_opt,
+      current_target,
       options,
       grunt.log);
 
@@ -178,7 +180,6 @@ module.exports = function(grunt) {
       if ( grunt.file.exists(project_dir+"/../config.json")) {
         deps.push( project_dir+"/../config.json");
       }
-
 
       /*
        NOTES that this code should be optimized in the future
