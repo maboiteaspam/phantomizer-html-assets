@@ -247,7 +247,7 @@ module.exports = function(grunt) {
 
 // create manifest file
             if( manifest == true ){
-                queue_html_manifest( sub_tasks, current_target, out_path, meta_dir, meta_file, out_file, in_request, out_file )
+                queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file )
                 grunt.log.ok("html manifest queued")
             }
 
@@ -349,7 +349,7 @@ module.exports = function(grunt) {
 
 
     // -- task queue-er
-    function queue_html_manifest( sub_tasks, current_target, out_dir, meta_dir, meta_file, out_file, in_request, in_file ){
+    function queue_html_manifest( sub_tasks, current_target, out_dir, meta_file, out_file, in_request, in_file ){
 
         var path = require('path');
         var jit_target = ""+in_request;
