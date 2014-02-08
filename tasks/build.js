@@ -2,15 +2,14 @@
 
 module.exports = function(grunt) {
 
-  grunt.registerMultiTask("phantomizer-html-assets", "Builds assets within an html file", function () {
+  var _ = grunt.util._;
+  var path = require('path');
+  var ProgressBar = require('progress');
 
-    var _ = grunt.util._;
-    var path = require('path');
+  var ph_libutil = require("phantomizer-libutil");
 
-    var ph_libutil = require("phantomizer-libutil");
-    var meta_factory = ph_libutil.meta;
-    var phantomizer_helper = ph_libutil.phantomizer_helper;
-    var html_utils = ph_libutil.html_utils;
+  grunt.registerMultiTask("phantomizer-html-assets",
+    "Parse and optimize assets of an HTML file", function () {
 
     var options = this.options({
       meta_file:'',
@@ -38,43 +37,136 @@ module.exports = function(grunt) {
     var in_file         = options.in_file;
     var in_request      = options.in_request;
     var out_file        = options.out;
+
+    var meta_dir        = options.meta_dir;
+    var out_path        = options.out_path;
+
+    var current_grunt_task  = this.nameArgs;
+    var current_grunt_opt   = this.options();
+    var user_config = grunt.config();
+
+      grunt.log.ok("Parse and optimize HTML assets: "+in_request);
+
+    parse_html_and_queue_opimizations(in_request,
+      in_file,
+      out_file,
+      meta_file,
+      user_config.project_dir,
+      current_grunt_task,
+      current_grunt_opt,
+      options,
+      grunt.log);
+
+  });
+
+
+  grunt.registerMultiTask("phantomizer-html-project-assets",
+    "Parse and optimize assets of an HTML file", function () {
+
+    var options = this.options({
+      urls_file:'',
+
+      file_suffix:'-opt',
+
+      meta_dir:'<%= meta_dir %>',
+      out_path:'<%= out_path %>',
+      paths:'<%= paths %>',
+
+      requirejs_src:false,
+      requirejs_burl:'',
+      uglify_js:false,
+
+      as_of_target: this.target
+    });
+    grunt.verbose.writeflags(options,"htmlassets");
+
+    var urls_file      = options.urls_file;
+
+    var meta_dir        = options.meta_dir;
+    var out_path        = options.out_path;
+
+    var current_grunt_task  = this.nameArgs;
+    var current_grunt_opt   = this.options();
+    var user_config = grunt.config();
+
+
+    var current_target  = options.as_of_target;
+
+
+    // fetch urls to build
+    var raw_urls = grunt.file.readJSON(urls_file);
+    if( raw_urls.length == 0 ){
+      return;
+    }
+
+    grunt.log.ok("Parse and optimize HTML assets: "+raw_urls.length);
+
+
+// initialize a progress bar
+    var bar = new ProgressBar(' done=[:current/:total] elapsed=[:elapseds] sprint=[:percent] eta=[:etas] [:bar]', {
+      complete: '#'
+      , incomplete: '-'
+      , width: 80
+      , total: raw_urls.length
+    });
+
+    for( var n in raw_urls ){
+      parse_html_and_queue_opimizations(
+        raw_urls[n].raw_in_request,
+        raw_urls[n].in_file,
+        raw_urls[n].out_file,
+        raw_urls[n].raw_in_request+"-"+current_target,
+        user_config.project_dir,
+        current_grunt_task,
+        current_grunt_opt,
+        current_target,
+        options,
+        grunt.verbose);
+      bar.tick();
+    }
+    grunt.log.ok();
+
+  });
+
+  // html parsing and task queueing
+  function parse_html_and_queue_opimizations(in_request, in_file, out_file, meta_file, project_dir, current_grunt_task, current_grunt_opt, current_target, options, logger){
+
+    var wd = process.cwd();
+    var base_url = path.dirname(in_request);
+
+    var meta_factory = ph_libutil.meta;
+    var phantomizer_helper = ph_libutil.phantomizer_helper;
+    var html_utils = ph_libutil.html_utils;
+    var deps = [];
+    var sub_tasks = [];
+
     var file_suffix     = options.file_suffix;
 
     var meta_dir        = options.meta_dir;
     var out_path        = options.out_path;
     var paths           = options.paths;
 
-    var manifest        = options.manifest;
+    var manifest        = options.manifest || false;
+    var image_merge     = options.image_merge || false;
+    var imgcompressor   = options.imgcompressor || false;
+    var uglify_js       = options.uglify_js || false;
+
     var requirejs_src   = options.requirejs_src;
     if( requirejs_src && requirejs_src.substring ) requirejs_src = [requirejs_src];
     var requirejs_burl  = options.requirejs_baseUrl;
-    var requirejs_paths  = options.requirejs_paths;
+    var requirejs_paths = options.requirejs_paths;
 
-
-    var current_target  = options.as_of_target;
-
-    var base_url = path.dirname(in_request);
-    var deps = [];
-    var sub_tasks = [];
-
-    var meta_manager = new meta_factory( process.cwd(), meta_dir );
-
-    var current_grunt_task  = this.nameArgs;
-    var current_grunt_opt   = this.options();
-    var user_config = grunt.config();
-
-    grunt.log.ok("Minify HTML assets "+in_request);
-
+    var meta_manager = new meta_factory(wd, meta_dir );
     if( meta_manager.is_fresh(meta_file, current_grunt_task) == false ){
 
-      var html_content = grunt.file.read(in_file).toString()
-      deps.push(in_file)
+      var html_content = grunt.file.read(in_file).toString();
+      deps.push(in_file);
 
-      if ( grunt.file.exists(process.cwd()+"/Gruntfile.js")) {
-        deps.push(process.cwd()+"/Gruntfile.js")
+      if ( grunt.file.exists(wd+"/Gruntfile.js")) {
+        deps.push(wd+"/Gruntfile.js");
       }
-      if ( grunt.file.exists(user_config.project_dir+"/../config.json")) {
-        deps.push( user_config.project_dir+"/../config.json")
+      if ( grunt.file.exists(project_dir+"/../config.json")) {
+        deps.push( project_dir+"/../config.json");
       }
 
 
@@ -91,67 +183,74 @@ module.exports = function(grunt) {
        */
 
 // look up for scripts to strip / merge / inject
-      html_content = html_clean_css(html_content)
-      grunt.log.ok("html cleaned")
+      html_content = html_clean_css(html_content);
+      logger.ok("html cleaned");
 
 
-      if( options.image_merge ){
-        queue_img_merge(sub_tasks, current_target )
+      if( image_merge ){
+        queue_img_merge(sub_tasks, current_target );
+        sub_tasks.push( "throttle:20" );
       }
-      sub_tasks.push( "throttle:20" );
 
 // look up for css file to compile <link rel="stylesheet" href="?">
-      var lnodes = html_utils.find_link_nodes(html_content, base_url)
+      var lnodes = html_utils.find_link_nodes(html_content, base_url);
       ForEachNodeFileFound(lnodes, paths, function(n, node, node_file){
         deps.push(node_file);
 
         var osrc = node.src;
-        if( osrc.indexOf("-min") == -1 && osrc.indexOf(".min") == -1 && osrc.indexOf(file_suffix) == -1 ){
-          osrc = node.src.replace(".css",file_suffix+".css")
-          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc)
+        if( osrc.indexOf("-min") == -1 &&
+          osrc.indexOf(".min") == -1 &&
+          osrc.indexOf(file_suffix) == -1 ){
+          osrc = node.src.replace(".css",file_suffix+".css");
+          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
         }else{
-          grunt.log.ok("Already minified\n\t"+osrc)
+          logger.ok("Already minified\n\t"+osrc );
         }
 
-        if( options.image_merge && osrc.indexOf("-im") == -1 ){
-          var tsrc = osrc.replace(file_suffix+".css", ".css")
-          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css")
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths )
-          osrc = tsrc
-        }else if(options.image_merge){
-          grunt.log.ok("Already merged image\n\t"+osrc)
+        if( image_merge &&
+          osrc.indexOf("-im") == -1 ){
+          var tsrc = osrc.replace(file_suffix+".css", ".css");
+          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
+          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
+          osrc = tsrc;
+        }else if(image_merge){
+          logger.ok("Already merged image\n\t"+osrc );
         }
 
-        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) )
-      })
-      grunt.log.ok("<link /> built")
+        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+      });
+      logger.ok("<link /> built");
 
 // look up for <style /> nodes
-      var snodes = html_utils.find_style_nodes(html_content, base_url)
+      var snodes = html_utils.find_style_nodes(html_content, base_url);
       ForEachRuleFileFound(snodes, paths, function(n, node, k, rule, node_file){
-        deps.push(node_file)
+        deps.push(node_file);
 
         var osrc = rule.src;
-        if( osrc.indexOf("-min") == -1 && osrc.indexOf(".min") == -1 && osrc.indexOf(file_suffix) == -1 ){
+
+        if( osrc.indexOf("-min") == -1 &&
+          osrc.indexOf(".min") == -1 &&
+          osrc.indexOf(file_suffix) == -1 ){
           osrc = rule.src.replace(".css",file_suffix+".css");
           queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
         }else{
-          grunt.log.ok("Already minified\n\t"+osrc)
-        }
-        if( options.image_merge && osrc.indexOf("-im") == -1 ){
-          var tsrc = osrc.replace(file_suffix+".css", ".css")
-          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css")
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths )
-          osrc = tsrc
-        }else{
-          grunt.log.ok("Already merged image\n\t"+osrc)
+          logger.ok("Already minified\n\t"+osrc );
         }
 
-        var node_ = node.node.replace(rule.src, osrc)
-        html_content = html_content.replace(node.node, node_ )
-        node.node = node_
-      })
-      grunt.log.ok("<style /> built")
+        if( image_merge && osrc.indexOf("-im") == -1 ){
+          var tsrc = osrc.replace(file_suffix+".css", ".css");
+          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
+          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
+          osrc = tsrc;
+        }else{
+          logger.ok("Already merged image\n\t"+osrc);
+        }
+
+        var node_ = node.node.replace(rule.src, osrc);
+        html_content = html_content.replace(node.node, node_);
+        node.node = node_;
+      });
+      logger.ok("<style /> built");
 
 
 
@@ -162,28 +261,24 @@ module.exports = function(grunt) {
 // look up for a data-main attached to requirejs url
           var rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
           if( rscripts.length > 0 ){
-            grunt.log.ok("building requirejs scripts");
+            logger.ok("building requirejs scripts");
             found_rjs = true;
 
             ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
-              deps.push(node_file)
-              var tsrc = node.asrc.replace(".js",file_suffix+".js")
-              var msrc = node.asrc.replace(".js","")
-              msrc = msrc.replace(options.requirejs_baseUrl, "");
-
-              var p_meta_file = node.asrc+"";
-              if(  meta_manager.has( p_meta_file ) ){
-                // nothing ?
-              }
+              deps.push(node_file);
+              var tsrc = node.asrc.replace(".js",file_suffix+".js");
+              var msrc = node.asrc.replace(".js","");
+              msrc = msrc.replace(requirejs_burl, "");
 
               queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+"", msrc);
 
 // apply the optimized version of the script in HTML
-              var node_ = "<script src='"+tsrc+"' optimized='true'></script>"
-              html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), "")
-              html_content = html_content.replace(node.node, node_)
+              var node_ = "<script src='"+tsrc+"' optimized='true'></script>";
+              html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), "");
+              html_content = html_content.replace(node.node, node_);
             });
 
+            // stops on first requirejs src found
             break;
           }
         }
@@ -191,11 +286,13 @@ module.exports = function(grunt) {
 
 
 // look up for script files to compile with uglifyjs
-      if( options.uglify_js ){
-        var scripts = html_utils.find_scripts_nodes(html_content, base_url)
+      if( uglify_js ){
+        var scripts = html_utils.find_scripts_nodes(html_content, base_url);
         ForEachNodeFileFound(scripts, paths, function(n, node, node_file){
-          if( node_file.indexOf("-min") == -1 && node_file.indexOf(".min") == -1 && node_file.indexOf(file_suffix) == -1 ){
-            deps.push(node_file)
+          if( node_file.indexOf("-min") == -1 &&
+            node_file.indexOf(".min") == -1 &&
+            node_file.indexOf(file_suffix) == -1 ){
+            deps.push(node_file);
             var osrc = scripts[n].src;
             var tsrc = osrc.replace(file_suffix+".js", ".js");
             tsrc = tsrc.replace(".js", "-min"+file_suffix+".js");
@@ -203,52 +300,54 @@ module.exports = function(grunt) {
             queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+"", node_file, osrc );
             var node_ = "<script src='"+tsrc+"'></script>";
             html_content = html_content.replace(scripts[n].node, node_);
-            grunt.log.ok("Uglifying "+osrc);
+            logger.ok("Uglifying "+osrc);
           }else{
-            grunt.log.ok("Already minified\n\t"+node_file)
+            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
           }
-        })
+        });
       }
 
 // look up for <img src="?" /> file to compile
-      if( options.imgcompressor ){
+      if( imgcompressor ){
         var inodes = html_utils.find_img_nodes(html_content, base_url);
         ForEachNodeFileFound(inodes, paths, function(n, node, node_file){
-          if( node_file.match("\.(png|jpeg|jpg)$") != null && node_file.indexOf(file_suffix) == -1 ){
-            deps.push(node_file)
-            var osrc = node.src.replace(new RegExp("\.(png|jpeg|jpg)$"),file_suffix+".$1")
-            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options )
+          if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
+            node_file.indexOf(file_suffix) == -1 ){
+            deps.push(node_file);
+            var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1");
+            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options );
             html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            grunt.log.ok("Compressing "+node.src);
+            logger.ok("Compressing "+node.src);
           }else{
-            grunt.log.ok("Already minified\n\t"+node_file)
+            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
           }
-        })
+        });
 // look up for background:url() file to compile
         var inodes = html_utils.find_style_nodes(html_content, base_url);
         ForEachImageFileFound(inodes, paths, function(n, node, node_file){
-          if( node_file.match("\.(png|jpeg|jpg)$") != null && node_file.indexOf(file_suffix) == -1 ){
+          if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
+            node_file.indexOf(file_suffix) == -1 ){
             deps.push(node_file)
-            var osrc = node.src.replace(new RegExp("\.(png|jpeg|jpg)$"),file_suffix+".$1")
+            var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1")
             queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options )
             html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            grunt.log.ok("Compressing "+node.src);
+            logger.ok("Compressing "+node.src);
           }else{
-            grunt.log.ok("Already minified\n\t"+node_file)
+            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
           }
-        })
-        grunt.log.ok("images minified")
+        });
+        logger.ok("images minified");
       }
 
 
 // write optimized html file
       grunt.file.write(out_file, html_content);
-      grunt.log.ok("HTML File created\n\t"+out_file)
+      logger.ok("HTML File created\n\t"+path.relative(wd,out_file));
 
 // create manifest file
       if( manifest == true ){
-        queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file )
-        grunt.log.ok("html manifest queued")
+        queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file );
+        logger.ok("html manifest queued");
       }
 
 
@@ -262,11 +361,12 @@ module.exports = function(grunt) {
       entry.require_task(current_grunt_task, current_grunt_opt);
       entry.save(meta_file);
 
+      return true;
     }else{
-      grunt.log.ok("your build is fresh !\n\t"+in_request)
+      logger.ok("your build is fresh !\n\t"+in_request);
+      return false;
     }
-  });
-
+  }
 
 
 // given a list of nodes, identify and merge those which has a corresponding file on drive
@@ -279,7 +379,7 @@ module.exports = function(grunt) {
           node_file = _in_file
           cb(n, nodes[n], node_file)
         }else{
-          grunt.log.error("File is missing\n\t"+node_file)
+          grunt.verbose.error("File is missing\n\t"+node_file)
         }
       }
     }
@@ -296,7 +396,7 @@ module.exports = function(grunt) {
             node_file = _in_file
             cb(n, nodes[n], k, import_rule, node_file)
           }else{
-            grunt.log.error("File is missing\n\t"+node_file)
+            grunt.verbose.error("File is missing\n\t"+node_file)
           }
         }
       }
@@ -314,7 +414,7 @@ module.exports = function(grunt) {
             node_file = _in_file
             cb(n, nodes[n], k, import_img, node_file)
           }else{
-            grunt.log.error("File is missing\n\t"+node_file)
+            grunt.verbose.error("File is missing\n\t"+node_file)
           }
         }
       }
@@ -341,7 +441,6 @@ module.exports = function(grunt) {
   }
 
   // -- htm manipulation
-
   function html_clean_css( html_content ){
     html_content = html_content.replace(/(<style[^>]*?\/?>\s*<\/style>)/gim, "")
     return html_content
