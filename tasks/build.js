@@ -11,135 +11,135 @@ module.exports = function(grunt) {
   grunt.registerMultiTask("phantomizer-html-assets",
     "Parse and optimize assets of an HTML file", function () {
 
-    var options = this.options({
-      meta_file:'',
-      in_file:'',
-      out:'',
-      in_request:'/',
-      file_suffix:'-opt',
+      var options = this.options({
+        meta_file:'',
+        in_file:'',
+        out:'',
+        in_request:'/',
+        file_suffix:'-opt',
 
-      meta_dir:'<%= meta_dir %>',
-      out_path:'<%= out_path %>',
-      paths:'<%= paths %>',
+        meta_dir:'<%= meta_dir %>',
+        out_path:'<%= out_path %>',
+        paths:'<%= paths %>',
 
-      manifest:false,
-      requirejs_src:false,
-      requirejs_burl:'',
-      uglify_js:false,
-      imgcompressor:false,
-      image_merge:false,
+        manifest:false,
+        requirejs_src:false,
+        requirejs_burl:'',
+        uglify_js:false,
+        imgcompressor:false,
+        image_merge:false,
 
-      as_of_target: this.target
-    });
-    grunt.verbose.writeflags(options,"htmlassets");
+        as_of_target: this.target
+      });
+      grunt.verbose.writeflags(options,"htmlassets");
 
-    var meta_file       = options.meta_file;
-    var in_file         = options.in_file;
-    var in_request      = options.in_request;
-    var out_file        = options.out;
+      var meta_file       = options.meta_file;
+      var in_file         = options.in_file;
+      var in_request      = options.in_request;
+      var out_file        = options.out;
 
-    var meta_dir        = options.meta_dir;
-    var out_path        = options.out_path;
+      var meta_dir        = options.meta_dir;
+      var out_path        = options.out_path;
 
       var current_target  = options.as_of_target;
-    var current_grunt_task  = this.nameArgs;
-    var current_grunt_opt   = this.options();
-    var user_config = grunt.config();
+      var current_grunt_task  = this.nameArgs;
+      var current_grunt_opt   = this.options();
+      var user_config = grunt.config();
 
       grunt.log.ok("Parse and optimize HTML assets: "+in_request);
 
       var sub_tasks = [];
-    parse_html_and_queue_opimizations(
-      sub_tasks,
-      in_request,
-      in_file,
-      out_file,
-      meta_file,
-      user_config.project_dir,
-      current_grunt_task,
-      current_grunt_opt,
-      current_target,
-      options,
-      grunt.log);
-
-// queue next tasks
-      grunt.task.run( sub_tasks );
-
-  });
-
-
-  grunt.registerMultiTask("phantomizer-html-project-assets",
-    "Parse and optimize assets of an HTML file", function () {
-
-    var options = this.options({
-      urls_file:'',
-
-      file_suffix:'-opt',
-
-      meta_dir:'<%= meta_dir %>',
-      out_path:'<%= out_path %>',
-      paths:'<%= paths %>',
-
-      requirejs_src:false,
-      requirejs_burl:'',
-      uglify_js:false,
-
-      as_of_target: this.target
-    });
-    grunt.verbose.writeflags(options,"htmlassets");
-
-    var urls_file      = options.urls_file;
-
-    var meta_dir        = options.meta_dir;
-    var out_path        = options.out_path;
-
-    var current_grunt_task  = this.nameArgs;
-    var current_grunt_opt   = this.options();
-    var user_config = grunt.config();
-
-
-    var current_target  = options.as_of_target;
-
-
-    // fetch urls to build
-    var raw_urls = grunt.file.readJSON(urls_file);
-    if( raw_urls.length == 0 ){
-      return;
-    }
-
-    grunt.log.ok("Parse and optimize HTML assets: "+raw_urls.length);
-
-
-// initialize a progress bar
-    var bar = new ProgressBar(' done=[:current/:total] elapsed=[:elapseds] sprint=[:percent] eta=[:etas] [:bar]', {
-      complete: '#'
-      , incomplete: '-'
-      , width: 80
-      , total: raw_urls.length
-    });
-
-      var sub_tasks = [];
-    for( var n in raw_urls ){
       parse_html_and_queue_opimizations(
         sub_tasks,
-        raw_urls[n].raw_in_request,
-        raw_urls[n].in_file,
-        raw_urls[n].out_file,
-        raw_urls[n].raw_in_request+"-"+current_target,
+        in_request,
+        in_file,
+        out_file,
+        meta_file,
         user_config.project_dir,
         current_grunt_task,
         current_grunt_opt,
         current_target,
         options,
-        grunt.verbose);
-      bar.tick();
-    }
-    grunt.log.ok();
+        grunt.log);
 
 // queue next tasks
       grunt.task.run( sub_tasks );
 
-  });
+    });
+
+
+  grunt.registerMultiTask("phantomizer-html-project-assets",
+    "Parse and optimize assets of an HTML file", function () {
+
+      var options = this.options({
+        urls_file:'',
+
+        file_suffix:'-opt',
+
+        meta_dir:'<%= meta_dir %>',
+        out_path:'<%= out_path %>',
+        paths:'<%= paths %>',
+
+        requirejs_src:false,
+        requirejs_burl:'',
+        uglify_js:false,
+
+        as_of_target: this.target
+      });
+      grunt.verbose.writeflags(options,"htmlassets");
+
+      var urls_file      = options.urls_file;
+
+      var meta_dir        = options.meta_dir;
+      var out_path        = options.out_path;
+
+      var current_grunt_task  = this.nameArgs;
+      var current_grunt_opt   = this.options();
+      var user_config = grunt.config();
+
+
+      var current_target  = options.as_of_target;
+
+
+      // fetch urls to build
+      var raw_urls = grunt.file.readJSON(urls_file);
+      if( raw_urls.length == 0 ){
+        return;
+      }
+
+      grunt.log.ok("Parse and optimize HTML assets: "+raw_urls.length);
+
+
+// initialize a progress bar
+      var bar = new ProgressBar(' done=[:current/:total] elapsed=[:elapseds] sprint=[:percent] eta=[:etas] [:bar]', {
+        complete: '#'
+        , incomplete: '-'
+        , width: 80
+        , total: raw_urls.length
+      });
+
+      var sub_tasks = [];
+      for( var n in raw_urls ){
+        parse_html_and_queue_opimizations(
+          sub_tasks,
+          raw_urls[n].raw_in_request,
+          raw_urls[n].in_file,
+          raw_urls[n].out_file,
+          raw_urls[n].raw_in_request+"-"+current_target,
+          user_config.project_dir,
+          current_grunt_task,
+          current_grunt_opt,
+          current_target,
+          options,
+          grunt.verbose);
+        bar.tick();
+      }
+      grunt.log.ok();
+
+// queue next tasks
+      grunt.task.run( sub_tasks );
+
+    });
 
   // html parsing and task queueing
   function parse_html_and_queue_opimizations(sub_tasks, in_request, in_file, out_file, meta_file, project_dir, current_grunt_task, current_grunt_opt, current_target, options, logger){
