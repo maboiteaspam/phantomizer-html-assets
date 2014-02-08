@@ -36,54 +36,56 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
   grunt.registerMultiTask(<span class="hljs-string">"phantomizer-html-assets"</span>,
     <span class="hljs-string">"Parse and optimize assets of an HTML file"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> {</span>
 
-    <span class="hljs-keyword">var</span> options = <span class="hljs-keyword">this</span>.options({
-      meta_file:<span class="hljs-string">''</span>,
-      in_file:<span class="hljs-string">''</span>,
-      out:<span class="hljs-string">''</span>,
-      in_request:<span class="hljs-string">'/'</span>,
-      file_suffix:<span class="hljs-string">'-opt'</span>,
+      <span class="hljs-keyword">var</span> options = <span class="hljs-keyword">this</span>.options({
+        meta_file:<span class="hljs-string">''</span>,
+        in_file:<span class="hljs-string">''</span>,
+        out:<span class="hljs-string">''</span>,
+        in_request:<span class="hljs-string">'/'</span>,
+        file_suffix:<span class="hljs-string">'-opt'</span>,
 
-      meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
-      out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
-      paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
+        meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
+        out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
+        paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
 
-      manifest:<span class="hljs-literal">false</span>,
-      requirejs_src:<span class="hljs-literal">false</span>,
-      requirejs_burl:<span class="hljs-string">''</span>,
-      uglify_js:<span class="hljs-literal">false</span>,
-      imgcompressor:<span class="hljs-literal">false</span>,
-      image_merge:<span class="hljs-literal">false</span>,
+        manifest:<span class="hljs-literal">false</span>,
+        requirejs_src:<span class="hljs-literal">false</span>,
+        requirejs_burl:<span class="hljs-string">''</span>,
+        uglify_js:<span class="hljs-literal">false</span>,
+        imgcompressor:<span class="hljs-literal">false</span>,
+        image_merge:<span class="hljs-literal">false</span>,
 
-      as_of_target: <span class="hljs-keyword">this</span>.target
-    });
-    grunt.verbose.writeflags(options,<span class="hljs-string">"htmlassets"</span>);
+        as_of_target: <span class="hljs-keyword">this</span>.target
+      });
+      grunt.verbose.writeflags(options,<span class="hljs-string">"htmlassets"</span>);
 
-    <span class="hljs-keyword">var</span> meta_file       = options.meta_file;
-    <span class="hljs-keyword">var</span> in_file         = options.in_file;
-    <span class="hljs-keyword">var</span> in_request      = options.in_request;
-    <span class="hljs-keyword">var</span> out_file        = options.out;
+      <span class="hljs-keyword">var</span> meta_file       = options.meta_file;
+      <span class="hljs-keyword">var</span> in_file         = options.in_file;
+      <span class="hljs-keyword">var</span> in_request      = options.in_request;
+      <span class="hljs-keyword">var</span> out_file        = options.out;
 
-    <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
-    <span class="hljs-keyword">var</span> out_path        = options.out_path;
+      <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
+      <span class="hljs-keyword">var</span> out_path        = options.out_path;
 
-    <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
-    <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
-    <span class="hljs-keyword">var</span> user_config = grunt.config();
+      <span class="hljs-keyword">var</span> current_target  = options.as_of_target;
+      <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
+      <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
+      <span class="hljs-keyword">var</span> user_config = grunt.config();
 
       grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+in_request);
 
       <span class="hljs-keyword">var</span> sub_tasks = [];
-    parse_html_and_queue_opimizations(
-      sub_tasks,
-      in_request,
-      in_file,
-      out_file,
-      meta_file,
-      user_config.project_dir,
-      current_grunt_task,
-      current_grunt_opt,
-      options,
-      grunt.log);</pre></div>
+      parse_html_and_queue_opimizations(
+        sub_tasks,
+        in_request,
+        in_file,
+        out_file,
+        meta_file,
+        user_config.project_dir,
+        current_grunt_task,
+        current_grunt_opt,
+        current_target,
+        options,
+        grunt.log);</pre></div>
         
       
         
@@ -92,82 +94,82 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         
           <div class='highlight'><pre>      grunt.task.run( sub_tasks );
 
-  });
+    });
 
 
   grunt.registerMultiTask(<span class="hljs-string">"phantomizer-html-project-assets"</span>,
     <span class="hljs-string">"Parse and optimize assets of an HTML file"</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-params">()</span> {</span>
 
-    <span class="hljs-keyword">var</span> options = <span class="hljs-keyword">this</span>.options({
-      urls_file:<span class="hljs-string">''</span>,
+      <span class="hljs-keyword">var</span> options = <span class="hljs-keyword">this</span>.options({
+        urls_file:<span class="hljs-string">''</span>,
 
-      file_suffix:<span class="hljs-string">'-opt'</span>,
+        file_suffix:<span class="hljs-string">'-opt'</span>,
 
-      meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
-      out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
-      paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
+        meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
+        out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
+        paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
 
-      requirejs_src:<span class="hljs-literal">false</span>,
-      requirejs_burl:<span class="hljs-string">''</span>,
-      uglify_js:<span class="hljs-literal">false</span>,
+        requirejs_src:<span class="hljs-literal">false</span>,
+        requirejs_burl:<span class="hljs-string">''</span>,
+        uglify_js:<span class="hljs-literal">false</span>,
 
-      as_of_target: <span class="hljs-keyword">this</span>.target
-    });
-    grunt.verbose.writeflags(options,<span class="hljs-string">"htmlassets"</span>);
+        as_of_target: <span class="hljs-keyword">this</span>.target
+      });
+      grunt.verbose.writeflags(options,<span class="hljs-string">"htmlassets"</span>);
 
-    <span class="hljs-keyword">var</span> urls_file      = options.urls_file;
+      <span class="hljs-keyword">var</span> urls_file      = options.urls_file;
 
-    <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
-    <span class="hljs-keyword">var</span> out_path        = options.out_path;
+      <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
+      <span class="hljs-keyword">var</span> out_path        = options.out_path;
 
-    <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
-    <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
-    <span class="hljs-keyword">var</span> user_config = grunt.config();
+      <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
+      <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
+      <span class="hljs-keyword">var</span> user_config = grunt.config();
 
 
-    <span class="hljs-keyword">var</span> current_target  = options.as_of_target;</pre></div>
+      <span class="hljs-keyword">var</span> current_target  = options.as_of_target;</pre></div>
         
       
         
         <p>fetch urls to build</p>
 
         
-          <div class='highlight'><pre>    <span class="hljs-keyword">var</span> raw_urls = grunt.file.readJSON(urls_file);
-    <span class="hljs-keyword">if</span>( raw_urls.length == <span class="hljs-number">0</span> ){
-      <span class="hljs-keyword">return</span>;
-    }
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> raw_urls = grunt.file.readJSON(urls_file);
+      <span class="hljs-keyword">if</span>( raw_urls.length == <span class="hljs-number">0</span> ){
+        <span class="hljs-keyword">return</span>;
+      }
 
-    grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+raw_urls.length);</pre></div>
+      grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+raw_urls.length);</pre></div>
         
       
         
         <p>initialize a progress bar</p>
 
         
-          <div class='highlight'><pre>    <span class="hljs-keyword">var</span> bar = <span class="hljs-keyword">new</span> ProgressBar(<span class="hljs-string">' done=[:current/:total] elapsed=[:elapseds] sprint=[:percent] eta=[:etas] [:bar]'</span>, {
-      complete: <span class="hljs-string">'#'</span>
-      , incomplete: <span class="hljs-string">'-'</span>
-      , width: <span class="hljs-number">80</span>
-      , total: raw_urls.length
-    });
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> bar = <span class="hljs-keyword">new</span> ProgressBar(<span class="hljs-string">' done=[:current/:total] elapsed=[:elapseds] sprint=[:percent] eta=[:etas] [:bar]'</span>, {
+        complete: <span class="hljs-string">'#'</span>
+        , incomplete: <span class="hljs-string">'-'</span>
+        , width: <span class="hljs-number">80</span>
+        , total: raw_urls.length
+      });
 
       <span class="hljs-keyword">var</span> sub_tasks = [];
-    <span class="hljs-keyword">for</span>( <span class="hljs-keyword">var</span> n <span class="hljs-keyword">in</span> raw_urls ){
-      parse_html_and_queue_opimizations(
-        sub_tasks,
-        raw_urls[n].raw_in_request,
-        raw_urls[n].in_file,
-        raw_urls[n].out_file,
-        raw_urls[n].raw_in_request+<span class="hljs-string">"-"</span>+current_target,
-        user_config.project_dir,
-        current_grunt_task,
-        current_grunt_opt,
-        current_target,
-        options,
-        grunt.verbose);
-      bar.tick();
-    }
-    grunt.log.ok();</pre></div>
+      <span class="hljs-keyword">for</span>( <span class="hljs-keyword">var</span> n <span class="hljs-keyword">in</span> raw_urls ){
+        parse_html_and_queue_opimizations(
+          sub_tasks,
+          raw_urls[n].raw_in_request,
+          raw_urls[n].in_file,
+          raw_urls[n].out_file,
+          raw_urls[n].raw_in_request+<span class="hljs-string">"-"</span>+current_target,
+          user_config.project_dir,
+          current_grunt_task,
+          current_grunt_opt,
+          current_target,
+          options,
+          grunt.verbose);
+        bar.tick();
+      }
+      grunt.log.ok();</pre></div>
         
       
         
@@ -176,7 +178,7 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         
           <div class='highlight'><pre>      grunt.task.run( sub_tasks );
 
-  });</pre></div>
+    });</pre></div>
         
       
         
@@ -221,7 +223,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">if</span> ( grunt.file.exists(project_dir+<span class="hljs-string">"/../config.json"</span>)) {
         deps.push( project_dir+<span class="hljs-string">"/../config.json"</span>);
       }
-
 
       <span class="hljs-comment">/*
        NOTES that this code should be optimized in the future
