@@ -27,7 +27,6 @@
 
 module.exports = <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(grunt)</span> {</span>
 
-  <span class="hljs-keyword">var</span> _ = grunt.util._;
   <span class="hljs-keyword">var</span> path = <span class="hljs-built_in">require</span>(<span class="hljs-string">'path'</span>);
   <span class="hljs-keyword">var</span> ProgressBar = <span class="hljs-built_in">require</span>(<span class="hljs-string">'progress'</span>);
 
@@ -43,7 +42,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         in_request:<span class="hljs-string">'/'</span>,
         file_suffix:<span class="hljs-string">'-opt'</span>,
 
-        meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
         out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
         paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
 
@@ -63,7 +61,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">var</span> in_request      = options.in_request;
       <span class="hljs-keyword">var</span> out_file        = options.out;
 
-      <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
       <span class="hljs-keyword">var</span> out_path        = options.out_path;
 
       <span class="hljs-keyword">var</span> current_target  = options.as_of_target;
@@ -71,28 +68,52 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
       <span class="hljs-keyword">var</span> user_config = grunt.config();
 
-      grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+in_request);
+      grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+in_request);</pre></div>
+        
+      
+        
+        <p>get phantomizer main instance</p>
 
-      <span class="hljs-keyword">var</span> sub_tasks = [];
-      parse_html_and_queue_opimizations(
-        sub_tasks,
-        in_request,
-        in_file,
-        out_file,
-        meta_file,
-        user_config.project_dir,
-        current_grunt_task,
-        current_grunt_opt,
-        current_target,
-        options,
-        grunt.log);</pre></div>
+        
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> phantomizer = ph_libutil.get(<span class="hljs-string">"main"</span>);
+      <span class="hljs-keyword">var</span> meta_manager = phantomizer.get_meta_manager();
+
+      <span class="hljs-keyword">if</span>( meta_manager.is_fresh(meta_file, current_grunt_task) == <span class="hljs-literal">false</span> ){
+        <span class="hljs-keyword">var</span> sub_tasks = [];
+        <span class="hljs-keyword">var</span> deps = parse_html_and_queue_opimizations(
+          sub_tasks,
+          in_request,
+          in_file,
+          out_file,
+          meta_file,
+          current_target,
+          options,
+          grunt.log);</pre></div>
+        
+      
+        
+        <p>create a cache entry, so that later we can regen or check freshness</p>
+
+        
+          <div class='highlight'><pre>        <span class="hljs-keyword">var</span> entry = meta_manager.load(meta_file);
+        entry.append_dependency(__filename);
+        entry.append_dependency(in_file);
+        <span class="hljs-keyword">var</span> wd = process.cwd();
+        entry.append_dependency(wd+<span class="hljs-string">"/Gruntfile.js"</span>);
+        entry.append_dependency( user_config.project_dir+<span class="hljs-string">"/../config.json"</span> );
+        entry.load_dependencies(deps);
+        entry.require_task(current_grunt_task, current_grunt_opt);
+        entry.save(meta_file);</pre></div>
         
       
         
         <p>queue next tasks</p>
 
         
-          <div class='highlight'><pre>      grunt.task.run( sub_tasks );
+          <div class='highlight'><pre>        grunt.task.run( sub_tasks );
+      }<span class="hljs-keyword">else</span>{
+        logger.ok(<span class="hljs-string">"your build is fresh !\n\t"</span>+in_request);
+      }
 
     });
 
@@ -105,7 +126,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
 
         file_suffix:<span class="hljs-string">'-opt'</span>,
 
-        meta_dir:<span class="hljs-string">'&lt;%= meta_dir %&gt;'</span>,
         out_path:<span class="hljs-string">'&lt;%= out_path %&gt;'</span>,
         paths:<span class="hljs-string">'&lt;%= paths %&gt;'</span>,
 
@@ -119,7 +139,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
 
       <span class="hljs-keyword">var</span> urls_file      = options.urls_file;
 
-      <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
       <span class="hljs-keyword">var</span> out_path        = options.out_path;
 
       <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
@@ -151,23 +170,49 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         , incomplete: <span class="hljs-string">'-'</span>
         , width: <span class="hljs-number">80</span>
         , total: raw_urls.length
-      });
+      });</pre></div>
+        
+      
+        
+        <p>get phantomizer main instance</p>
+
+        
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> phantomizer = ph_libutil.get(<span class="hljs-string">"main"</span>);
+      <span class="hljs-keyword">var</span> meta_manager = phantomizer.get_meta_manager();
 
       <span class="hljs-keyword">var</span> sub_tasks = [];
       <span class="hljs-keyword">for</span>( <span class="hljs-keyword">var</span> n <span class="hljs-keyword">in</span> raw_urls ){
-        parse_html_and_queue_opimizations(
-          sub_tasks,
-          raw_urls[n].raw_in_request,
-          raw_urls[n].in_file,
-          raw_urls[n].out_file,
-          raw_urls[n].raw_in_request+<span class="hljs-string">"-"</span>+current_target,
-          user_config.project_dir,
-          current_grunt_task,
-          current_grunt_opt,
-          current_target,
-          options,
-          grunt.verbose);
-        bar.tick();
+        <span class="hljs-keyword">var</span> meta_file = raw_urls[n].raw_in_request+<span class="hljs-string">"-"</span>+current_target;
+        <span class="hljs-keyword">if</span>( meta_manager.is_fresh(meta_file, current_grunt_task) == <span class="hljs-literal">false</span> ){
+          <span class="hljs-keyword">var</span> deps = parse_html_and_queue_opimizations(
+            sub_tasks,
+            raw_urls[n].raw_in_request,
+            raw_urls[n].in_file,
+            raw_urls[n].out_file,
+            meta_file,
+            current_target,
+            options,
+            grunt.verbose);</pre></div>
+        
+      
+        
+        <p>create a cache entry, so that later we can regen or check freshness</p>
+
+        
+          <div class='highlight'><pre>          <span class="hljs-keyword">var</span> entry = meta_manager.load(meta_file);
+          entry.append_dependency(raw_urls[n].in_file);
+          entry.append_dependency(__filename);
+          <span class="hljs-keyword">var</span> wd = process.cwd();
+          entry.append_dependency(wd+<span class="hljs-string">"/Gruntfile.js"</span>);
+          entry.append_dependency( user_config.project_dir+<span class="hljs-string">"/../config.json"</span> );
+          entry.load_dependencies(deps);
+          entry.require_task(current_grunt_task, current_grunt_opt);
+          entry.save(meta_file);
+
+          bar.tick();
+        }<span class="hljs-keyword">else</span>{
+          logger.ok(<span class="hljs-string">"your build is fresh !\n\t"</span>+in_request);
+        }
       }
       grunt.log.ok();</pre></div>
         
@@ -185,19 +230,17 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         <p>html parsing and task queueing</p>
 
         
-          <div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parse_html_and_queue_opimizations</span><span class="hljs-params">(sub_tasks, in_request, in_file, out_file, meta_file, project_dir, current_grunt_task, current_grunt_opt, current_target, options, logger)</span>{</span>
+          <div class='highlight'><pre>  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">parse_html_and_queue_opimizations</span><span class="hljs-params">(sub_tasks, in_request, in_file, out_file, meta_file, current_target, options, logger)</span>{</span>
 
     <span class="hljs-keyword">var</span> wd = process.cwd();
     <span class="hljs-keyword">var</span> base_url = path.dirname(in_request);
 
-    <span class="hljs-keyword">var</span> meta_factory = ph_libutil.meta;
     <span class="hljs-keyword">var</span> phantomizer_helper = ph_libutil.phantomizer_helper;
     <span class="hljs-keyword">var</span> html_utils = ph_libutil.html_utils;
     <span class="hljs-keyword">var</span> deps = [];
 
     <span class="hljs-keyword">var</span> file_suffix     = options.file_suffix;
 
-    <span class="hljs-keyword">var</span> meta_dir        = options.meta_dir;
     <span class="hljs-keyword">var</span> out_path        = options.out_path;
     <span class="hljs-keyword">var</span> paths           = options.paths;
 
@@ -211,260 +254,235 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
     <span class="hljs-keyword">var</span> requirejs_burl  = options.requirejs_baseUrl;
     <span class="hljs-keyword">var</span> requirejs_paths = options.requirejs_paths;
 
-    <span class="hljs-keyword">var</span> meta_manager = <span class="hljs-keyword">new</span> meta_factory(wd, meta_dir );
-    <span class="hljs-keyword">if</span>( meta_manager.is_fresh(meta_file, current_grunt_task) == <span class="hljs-literal">false</span> ){
 
-      <span class="hljs-keyword">var</span> html_content = grunt.file.read(in_file).toString();
-      deps.push(in_file);
+    <span class="hljs-keyword">var</span> html_content = grunt.file.read(in_file).toString();
 
-      <span class="hljs-keyword">if</span> ( grunt.file.exists(wd+<span class="hljs-string">"/Gruntfile.js"</span>)) {
-        deps.push(wd+<span class="hljs-string">"/Gruntfile.js"</span>);
-      }
-      <span class="hljs-keyword">if</span> ( grunt.file.exists(project_dir+<span class="hljs-string">"/../config.json"</span>)) {
-        deps.push( project_dir+<span class="hljs-string">"/../config.json"</span>);
-      }
-
-      <span class="hljs-comment">/*
-       NOTES that this code should be optimized in the future
-       the html_content is parsed again and again too many times
-       a better model would use an object as a list of reference to html nodes of the document,
-       something like DOM
-       each node reference could be updated in place,
-       removed from the list and deleted from the content
-       added in place
-       ect
-       wihtout having to parse the html string on every changes
-       */</span></pre></div>
+    <span class="hljs-comment">/*
+     NOTES that this code should be optimized in the future
+     the html_content is parsed again and again too many times
+     a better model would use an object as a list of reference to html nodes of the document,
+     something like DOM
+     each node reference could be updated in place,
+     removed from the list and deleted from the content
+     added in place
+     ect
+     wihtout having to parse the html string on every changes
+     */</span></pre></div>
         
       
         
         <p>look up for scripts to strip / merge / inject</p>
 
         
-          <div class='highlight'><pre>      html_content = html_clean_css(html_content);
-      logger.ok(<span class="hljs-string">"html cleaned"</span>);
+          <div class='highlight'><pre>    html_content = html_clean_css(html_content);
+    logger.ok(<span class="hljs-string">"html cleaned"</span>);
 
 
-      <span class="hljs-keyword">if</span>( image_merge ){
-        queue_img_merge(sub_tasks, current_target );
-      }</pre></div>
+    <span class="hljs-keyword">if</span>( image_merge ){
+      queue_img_merge(sub_tasks, current_target );
+    }</pre></div>
         
       
         
         <p>look up for css file to compile <link rel="stylesheet" href="?"></p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> lnodes = html_utils.find_link_nodes(html_content, base_url);
-      ForEachNodeFileFound(lnodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
-        deps.push(node_file);
+          <div class='highlight'><pre>    <span class="hljs-keyword">var</span> lnodes = html_utils.find_link_nodes(html_content, base_url);
+    ForEachNodeFileFound(lnodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
+      deps.push(node_file);
 
-        <span class="hljs-keyword">var</span> osrc = node.src;
-        <span class="hljs-keyword">if</span>( osrc.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-          osrc.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-          osrc.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
-          osrc = node.src.replace(<span class="hljs-string">".css"</span>,file_suffix+<span class="hljs-string">".css"</span>);
-          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+<span class="hljs-string">""</span>, node_file, osrc);
-        }<span class="hljs-keyword">else</span>{
-          logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+osrc );
-        }
+      <span class="hljs-keyword">var</span> osrc = node.src;
+      <span class="hljs-keyword">if</span>( osrc.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+        osrc.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+        osrc.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
+        osrc = node.src.replace(<span class="hljs-string">".css"</span>,file_suffix+<span class="hljs-string">".css"</span>);
+        queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+<span class="hljs-string">""</span>, node_file, osrc);
+      }<span class="hljs-keyword">else</span>{
+        logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+osrc );
+      }
 
-        <span class="hljs-keyword">if</span>( image_merge &amp;&amp;
-          osrc.indexOf(<span class="hljs-string">"-im"</span>) == -<span class="hljs-number">1</span> ){
-          <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".css"</span>, <span class="hljs-string">".css"</span>);
-          tsrc = tsrc.replace(<span class="hljs-string">".css"</span>, <span class="hljs-string">"-im"</span>+file_suffix+<span class="hljs-string">".css"</span>);
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
-          osrc = tsrc;
-        }<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(image_merge){
-          logger.ok(<span class="hljs-string">"Already merged image\n\t"</span>+osrc );
-        }
+      <span class="hljs-keyword">if</span>( image_merge &amp;&amp;
+        osrc.indexOf(<span class="hljs-string">"-im"</span>) == -<span class="hljs-number">1</span> ){
+        <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".css"</span>, <span class="hljs-string">".css"</span>);
+        tsrc = tsrc.replace(<span class="hljs-string">".css"</span>, <span class="hljs-string">"-im"</span>+file_suffix+<span class="hljs-string">".css"</span>);
+        queue_css_img_merge( sub_tasks, current_target, out_path, osrc, tsrc, paths );
+        osrc = tsrc;
+      }<span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(image_merge){
+        logger.ok(<span class="hljs-string">"Already merged image\n\t"</span>+osrc );
+      }
 
-        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-      });
-      logger.ok(<span class="hljs-string">"&lt;link /&gt; built"</span>);</pre></div>
+      html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+    });
+    logger.ok(<span class="hljs-string">"&lt;link /&gt; built"</span>);</pre></div>
         
       
         
         <p>look up for <style /> nodes</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> snodes = html_utils.find_style_nodes(html_content, base_url);
-      ForEachRuleFileFound(snodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, k, rule, node_file)</span>{</span>
-        deps.push(node_file);
+          <div class='highlight'><pre>    <span class="hljs-keyword">var</span> snodes = html_utils.find_style_nodes(html_content, base_url);
+    ForEachRuleFileFound(snodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, k, rule, node_file)</span>{</span>
+      deps.push(node_file);
 
-        <span class="hljs-keyword">var</span> osrc = rule.src;
+      <span class="hljs-keyword">var</span> osrc = rule.src;
 
-        <span class="hljs-keyword">if</span>( osrc.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-          osrc.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-          osrc.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
-          osrc = rule.src.replace(<span class="hljs-string">".css"</span>,file_suffix+<span class="hljs-string">".css"</span>);
-          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+<span class="hljs-string">""</span>, node_file, osrc);
-        }<span class="hljs-keyword">else</span>{
-          logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+osrc );
-        }
+      <span class="hljs-keyword">if</span>( osrc.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+        osrc.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+        osrc.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
+        osrc = rule.src.replace(<span class="hljs-string">".css"</span>,file_suffix+<span class="hljs-string">".css"</span>);
+        queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+<span class="hljs-string">""</span>, node_file, osrc);
+      }<span class="hljs-keyword">else</span>{
+        logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+osrc );
+      }
 
-        <span class="hljs-keyword">if</span>( image_merge &amp;&amp; osrc.indexOf(<span class="hljs-string">"-im"</span>) == -<span class="hljs-number">1</span> ){
-          <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".css"</span>, <span class="hljs-string">".css"</span>);
-          tsrc = tsrc.replace(<span class="hljs-string">".css"</span>, <span class="hljs-string">"-im"</span>+file_suffix+<span class="hljs-string">".css"</span>);
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
-          osrc = tsrc;
-        }<span class="hljs-keyword">else</span>{
-          logger.ok(<span class="hljs-string">"Already merged image\n\t"</span>+osrc);
-        }
+      <span class="hljs-keyword">if</span>( image_merge &amp;&amp; osrc.indexOf(<span class="hljs-string">"-im"</span>) == -<span class="hljs-number">1</span> ){
+        <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".css"</span>, <span class="hljs-string">".css"</span>);
+        tsrc = tsrc.replace(<span class="hljs-string">".css"</span>, <span class="hljs-string">"-im"</span>+file_suffix+<span class="hljs-string">".css"</span>);
+        queue_css_img_merge( sub_tasks, current_target, out_path, osrc, tsrc, paths );
+        osrc = tsrc;
+      }<span class="hljs-keyword">else</span>{
+        logger.ok(<span class="hljs-string">"Already merged image\n\t"</span>+osrc);
+      }
 
-        <span class="hljs-keyword">var</span> node_ = node.node.replace(rule.src, osrc);
-        html_content = html_content.replace(node.node, node_);
-        node.node = node_;
-      });
-      logger.ok(<span class="hljs-string">"&lt;style /&gt; built"</span>);</pre></div>
+      <span class="hljs-keyword">var</span> node_ = node.node.replace(rule.src, osrc);
+      html_content = html_content.replace(node.node, node_);
+      node.node = node_;
+    });
+    logger.ok(<span class="hljs-string">"&lt;style /&gt; built"</span>);</pre></div>
         
       
         
         <p>look up for script files to compile with requirejs</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">if</span>( requirejs_src != <span class="hljs-literal">false</span> ){
-        <span class="hljs-keyword">var</span> found_rjs = <span class="hljs-literal">false</span>;
-        <span class="hljs-keyword">for</span>( <span class="hljs-keyword">var</span> nn <span class="hljs-keyword">in</span> requirejs_src ){</pre></div>
+          <div class='highlight'><pre>    <span class="hljs-keyword">if</span>( requirejs_src != <span class="hljs-literal">false</span> ){
+      <span class="hljs-keyword">var</span> found_rjs = <span class="hljs-literal">false</span>;
+      <span class="hljs-keyword">for</span>( <span class="hljs-keyword">var</span> nn <span class="hljs-keyword">in</span> requirejs_src ){</pre></div>
         
       
         
         <p>look up for a data-main attached to requirejs url</p>
 
         
-          <div class='highlight'><pre>          <span class="hljs-keyword">var</span> rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
-          <span class="hljs-keyword">if</span>( rscripts.length &gt; <span class="hljs-number">0</span> ){
-            logger.ok(<span class="hljs-string">"building requirejs scripts"</span>);
-            found_rjs = <span class="hljs-literal">true</span>;
+          <div class='highlight'><pre>        <span class="hljs-keyword">var</span> rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
+        <span class="hljs-keyword">if</span>( rscripts.length &gt; <span class="hljs-number">0</span> ){
+          logger.ok(<span class="hljs-string">"building requirejs scripts"</span>);
+          found_rjs = <span class="hljs-literal">true</span>;
 
-            ForEachNodeFileFound(rscripts, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
-              deps.push(node_file);
-              <span class="hljs-keyword">var</span> tsrc = node.asrc.replace(<span class="hljs-string">".js"</span>,file_suffix+<span class="hljs-string">".js"</span>);
-              <span class="hljs-keyword">var</span> msrc = node.asrc.replace(<span class="hljs-string">".js"</span>,<span class="hljs-string">""</span>);
-              msrc = msrc.replace(requirejs_burl, <span class="hljs-string">""</span>);
+          ForEachNodeFileFound(rscripts, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
+            deps.push(node_file);
+            <span class="hljs-keyword">var</span> tsrc = node.asrc.replace(<span class="hljs-string">".js"</span>,file_suffix+<span class="hljs-string">".js"</span>);
+            <span class="hljs-keyword">var</span> msrc = node.asrc.replace(<span class="hljs-string">".js"</span>,<span class="hljs-string">""</span>);
+            msrc = msrc.replace(requirejs_burl, <span class="hljs-string">""</span>);
 
-              queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+<span class="hljs-string">""</span>, msrc);</pre></div>
+            queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+<span class="hljs-string">""</span>, msrc);</pre></div>
         
       
         
         <p>apply the optimized version of the script in HTML</p>
 
         
-          <div class='highlight'><pre>              <span class="hljs-keyword">var</span> node_ = <span class="hljs-string">"&lt;script src='"</span>+tsrc+<span class="hljs-string">"' optimized='true'&gt;&lt;/script&gt;"</span>;
-              html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), <span class="hljs-string">""</span>);
-              html_content = html_content.replace(node.node, node_);
-            });</pre></div>
+          <div class='highlight'><pre>            <span class="hljs-keyword">var</span> node_ = <span class="hljs-string">"&lt;script src='"</span>+tsrc+<span class="hljs-string">"' optimized='true'&gt;&lt;/script&gt;"</span>;
+            html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), <span class="hljs-string">""</span>);
+            html_content = html_content.replace(node.node, node_);
+          });</pre></div>
         
       
         
         <p>stops on first requirejs src found</p>
 
         
-          <div class='highlight'><pre>            <span class="hljs-keyword">break</span>;
-          }
+          <div class='highlight'><pre>          <span class="hljs-keyword">break</span>;
         }
-      }</pre></div>
+      }
+    }</pre></div>
         
       
         
         <p>look up for script files to compile with uglifyjs</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">if</span>( uglify_js ){
-        <span class="hljs-keyword">var</span> scripts = html_utils.find_scripts_nodes(html_content, base_url);
-        ForEachNodeFileFound(scripts, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
-          <span class="hljs-keyword">if</span>( node_file.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-            node_file.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
-            node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
-            deps.push(node_file);
-            <span class="hljs-keyword">var</span> osrc = scripts[n].src;
-            <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".js"</span>, <span class="hljs-string">".js"</span>);
-            tsrc = tsrc.replace(<span class="hljs-string">".js"</span>, <span class="hljs-string">"-min"</span>+file_suffix+<span class="hljs-string">".js"</span>);
+          <div class='highlight'><pre>    <span class="hljs-keyword">if</span>( uglify_js ){
+      <span class="hljs-keyword">var</span> scripts = html_utils.find_scripts_nodes(html_content, base_url);
+      ForEachNodeFileFound(scripts, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
+        <span class="hljs-keyword">if</span>( node_file.indexOf(<span class="hljs-string">"-min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+          node_file.indexOf(<span class="hljs-string">".min"</span>) == -<span class="hljs-number">1</span> &amp;&amp;
+          node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
+          deps.push(node_file);
+          <span class="hljs-keyword">var</span> osrc = scripts[n].src;
+          <span class="hljs-keyword">var</span> tsrc = osrc.replace(file_suffix+<span class="hljs-string">".js"</span>, <span class="hljs-string">".js"</span>);
+          tsrc = tsrc.replace(<span class="hljs-string">".js"</span>, <span class="hljs-string">"-min"</span>+file_suffix+<span class="hljs-string">".js"</span>);
 
-            queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+<span class="hljs-string">""</span>, node_file, osrc );
-            <span class="hljs-keyword">var</span> node_ = <span class="hljs-string">"&lt;script src='"</span>+tsrc+<span class="hljs-string">"'&gt;&lt;/script&gt;"</span>;
-            html_content = html_content.replace(scripts[n].node, node_);
-            logger.ok(<span class="hljs-string">"Uglifying "</span>+osrc);
-          }<span class="hljs-keyword">else</span>{
-            logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
-          }
-        });
-      }</pre></div>
+          queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, tsrc+<span class="hljs-string">""</span>, node_file, osrc );
+          <span class="hljs-keyword">var</span> node_ = <span class="hljs-string">"&lt;script src='"</span>+tsrc+<span class="hljs-string">"'&gt;&lt;/script&gt;"</span>;
+          html_content = html_content.replace(scripts[n].node, node_);
+          logger.ok(<span class="hljs-string">"Uglifying "</span>+osrc);
+        }<span class="hljs-keyword">else</span>{
+          logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
+        }
+      });
+    }</pre></div>
         
       
         
         <p>look up for <img src="?" /> file to compile</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">if</span>( imgcompressor ){
-        <span class="hljs-keyword">var</span> inodes = html_utils.find_img_nodes(html_content, base_url);
-        ForEachNodeFileFound(inodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
-          <span class="hljs-keyword">if</span>( node_file.match(<span class="hljs-regexp">/[.](png|jpeg|jpg)$/</span>) != <span class="hljs-literal">null</span> &amp;&amp;
-            node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
-            deps.push(node_file);
-            <span class="hljs-keyword">var</span> osrc = node.src.replace(<span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">"[.](png|jpeg|jpg)$"</span>),file_suffix+<span class="hljs-string">".$1"</span>);
-            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options );
-            html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            logger.ok(<span class="hljs-string">"Compressing "</span>+node.src);
-          }<span class="hljs-keyword">else</span>{
-            logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
-          }
-        });</pre></div>
+          <div class='highlight'><pre>    <span class="hljs-keyword">if</span>( imgcompressor ){
+      <span class="hljs-keyword">var</span> inodes = html_utils.find_img_nodes(html_content, base_url);
+      ForEachNodeFileFound(inodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
+        <span class="hljs-keyword">if</span>( node_file.match(<span class="hljs-regexp">/[.](png|jpeg|jpg)$/</span>) != <span class="hljs-literal">null</span> &amp;&amp;
+          node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
+          deps.push(node_file);
+          <span class="hljs-keyword">var</span> osrc = node.src.replace(<span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">"[.](png|jpeg|jpg)$"</span>),file_suffix+<span class="hljs-string">".$1"</span>);
+          queue_img_opt(sub_tasks, current_target, out_path, paths, node_file, node.asrc, osrc, options );
+          html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+          logger.ok(<span class="hljs-string">"Compressing "</span>+node.src);
+        }<span class="hljs-keyword">else</span>{
+          logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
+        }
+      });</pre></div>
         
       
         
         <p>look up for background:url() file to compile</p>
 
         
-          <div class='highlight'><pre>        <span class="hljs-keyword">var</span> inodes = html_utils.find_style_nodes(html_content, base_url);
-        ForEachImageFileFound(inodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
-          <span class="hljs-keyword">if</span>( node_file.match(<span class="hljs-regexp">/[.](png|jpeg|jpg)$/</span>) != <span class="hljs-literal">null</span> &amp;&amp;
-            node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
-            deps.push(node_file)
-            <span class="hljs-keyword">var</span> osrc = node.src.replace(<span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">"[.](png|jpeg|jpg)$"</span>),file_suffix+<span class="hljs-string">".$1"</span>)
-            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options );
-            html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            logger.ok(<span class="hljs-string">"Compressing "</span>+node.src);
-          }<span class="hljs-keyword">else</span>{
-            logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
-          }
-        });
-        logger.ok(<span class="hljs-string">"images minified"</span>);
-      }</pre></div>
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> inodes = html_utils.find_style_nodes(html_content, base_url);
+      ForEachImageFileFound(inodes, paths, <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">(n, node, node_file)</span>{</span>
+        <span class="hljs-keyword">if</span>( node_file.match(<span class="hljs-regexp">/[.](png|jpeg|jpg)$/</span>) != <span class="hljs-literal">null</span> &amp;&amp;
+          node_file.indexOf(file_suffix) == -<span class="hljs-number">1</span> ){
+          deps.push(node_file)
+          <span class="hljs-keyword">var</span> osrc = node.src.replace(<span class="hljs-keyword">new</span> <span class="hljs-built_in">RegExp</span>(<span class="hljs-string">"[.](png|jpeg|jpg)$"</span>),file_suffix+<span class="hljs-string">".$1"</span>)
+          queue_img_opt(sub_tasks, current_target, out_path, paths, node_file, node.asrc, osrc, options );
+          html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+          logger.ok(<span class="hljs-string">"Compressing "</span>+node.src);
+        }<span class="hljs-keyword">else</span>{
+          logger.ok(<span class="hljs-string">"Already minified\n\t"</span>+path.relative(wd,node_file));
+        }
+      });
+      logger.ok(<span class="hljs-string">"images minified"</span>);
+    }</pre></div>
         
       
         
         <p>write optimized html file</p>
 
         
-          <div class='highlight'><pre>      grunt.file.write(out_file, html_content);
-      logger.ok(<span class="hljs-string">"HTML File created\n\t"</span>+path.relative(wd,out_file));</pre></div>
+          <div class='highlight'><pre>    grunt.file.write(out_file, html_content);
+    logger.ok(<span class="hljs-string">"HTML File created\n\t"</span>+path.relative(wd,out_file));</pre></div>
         
       
         
         <p>create manifest file</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">if</span>( manifest == <span class="hljs-literal">true</span> ){
-        queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file );
-        logger.ok(<span class="hljs-string">"html manifest queued"</span>);
-      }</pre></div>
-        
-      
-        
-        <p>create a cache entry, so that later we can regen or check freshness</p>
-
-        
-          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> entry = meta_manager.load(meta_file);
-      deps.push(__filename)
-      entry.load_dependencies(deps);
-      entry.require_task(current_grunt_task, current_grunt_opt);
-      entry.save(meta_file);
-
-      <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
-    }<span class="hljs-keyword">else</span>{
-      logger.ok(<span class="hljs-string">"your build is fresh !\n\t"</span>+in_request);
-      <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+          <div class='highlight'><pre>    <span class="hljs-keyword">if</span>( manifest == <span class="hljs-literal">true</span> ){
+      queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file );
+      logger.ok(<span class="hljs-string">"html manifest queued"</span>);
     }
+
+    <span class="hljs-keyword">return</span> deps;
   }</pre></div>
         
       
@@ -590,7 +608,7 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
     }
   }
 
-  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_img_opt</span><span class="hljs-params">( sub_tasks, current_target, out_path, meta_dir, paths, in_file, asrc, osrc, options )</span>{</span>
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_img_opt</span><span class="hljs-params">( sub_tasks, current_target, out_path, paths, in_file, asrc, osrc, options )</span>{</span>
 
     <span class="hljs-keyword">var</span> jit_target = <span class="hljs-string">""</span>+asrc;
     <span class="hljs-keyword">var</span> task_name = <span class="hljs-string">"phantomizer-imgopt"</span>;
@@ -600,7 +618,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">var</span> task_options = grunt.config(task_name) || {};
       task_options = clone_subtasks_options(task_options, jit_target, current_target);
       task_options[jit_target].options.out_dir = out_path;
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.paths = paths;
       task_options[jit_target].options.in_files = {};
 
@@ -626,7 +643,7 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
 
   }
 
-  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_uglifyjs_build</span><span class="hljs-params">( sub_tasks, current_target, out_file, meta_dir, meta_file, in_file, in_request )</span>{</span>
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_uglifyjs_build</span><span class="hljs-params">( sub_tasks, current_target, out_file, meta_file, in_file, in_request )</span>{</span>
 
     <span class="hljs-keyword">var</span> jit_target = <span class="hljs-string">""</span>+in_request;
     <span class="hljs-keyword">var</span> task_name = <span class="hljs-string">"phantomizer-uglifyjs"</span>;
@@ -635,7 +652,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">var</span> task_options = grunt.config(task_name) || {};
       task_options = clone_subtasks_options(task_options, jit_target, current_target);
       <span class="hljs-keyword">if</span>( !task_options[jit_target].files ) task_options[jit_target].files = {};
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.meta_file = meta_file;
       task_options[jit_target].files[out_file] = [in_file];
 
@@ -664,7 +680,7 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
     }
   }
 
-  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_css_img_merge</span><span class="hljs-params">( sub_tasks, current_target, out_dir, meta_dir, osrc, tsrc, paths )</span>{</span>
+  <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">queue_css_img_merge</span><span class="hljs-params">( sub_tasks, current_target, out_dir, osrc, tsrc, paths )</span>{</span>
 
     <span class="hljs-keyword">var</span> merge_options = grunt.config(<span class="hljs-string">"phantomizer-gm-merge"</span>) || {};
     <span class="hljs-keyword">var</span> map = merge_options.options.in_files;
@@ -677,7 +693,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
 
       task_options = clone_subtasks_options(task_options, jit_target, current_target)
       task_options[jit_target].options.in_request = osrc;
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.out_file = out_dir+tsrc;
       task_options[jit_target].options.meta_file = tsrc+<span class="hljs-string">""</span>;
       task_options[jit_target].options.paths = paths;
