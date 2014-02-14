@@ -47,7 +47,8 @@ module.exports = function(grunt) {
 
 
 // get phantomizer main instance
-      var phantomizer = ph_libutil.get("main");
+      var Phantomizer = ph_libutil.Phantomizer;
+      var phantomizer = new Phantomizer(process.cwd(),grunt);
       var meta_manager = phantomizer.get_meta_manager();
 
       if( meta_manager.is_fresh(meta_file, current_grunt_task) == false ){
@@ -132,7 +133,8 @@ module.exports = function(grunt) {
 
 
 // get phantomizer main instance
-      var phantomizer = ph_libutil.get("main");
+      var Phantomizer = ph_libutil.Phantomizer;
+      var phantomizer = new Phantomizer(process.cwd(),grunt);
       var meta_manager = phantomizer.get_meta_manager();
 
       var sub_tasks = [];
