@@ -37,19 +37,6 @@ module.exports = function(grunt) {
     }
   });
 
-  // test purpose
-  grunt.loadNpmTasks('phantomizer-requirejs');
-  grunt.loadNpmTasks('phantomizer-htmlcompressor');
-  grunt.loadNpmTasks('phantomizer-uglifyjs');
-  grunt.loadNpmTasks('phantomizer-html-assets');
-
-  grunt.registerTask('default',
-    [
-      'phantomizer-html-assets:test'
-    ]);
-  // test purpose
-
-
   grunt.loadNpmTasks('grunt-docco');
   grunt.loadNpmTasks('grunt-gh-pages');
   grunt.loadNpmTasks('grunt-release');
