@@ -2,7 +2,6 @@
 
 module.exports = function(grunt) {
 
-  var _ = grunt.util._;
   var path = require('path');
   var ProgressBar = require('progress');
 
@@ -18,7 +17,6 @@ module.exports = function(grunt) {
         in_request:'/',
         file_suffix:'-opt',
 
-        meta_dir:'<%= meta_dir %>',
         out_path:'<%= out_path %>',
         paths:'<%= paths %>',
 
@@ -38,7 +36,6 @@ module.exports = function(grunt) {
       var in_request      = options.in_request;
       var out_file        = options.out;
 
-      var meta_dir        = options.meta_dir;
       var out_path        = options.out_path;
 
       var current_target  = options.as_of_target;
@@ -48,22 +45,39 @@ module.exports = function(grunt) {
 
       grunt.log.ok("Parse and optimize HTML assets: "+in_request);
 
-      var sub_tasks = [];
-      parse_html_and_queue_opimizations(
-        sub_tasks,
-        in_request,
-        in_file,
-        out_file,
-        meta_file,
-        user_config.project_dir,
-        current_grunt_task,
-        current_grunt_opt,
-        current_target,
-        options,
-        grunt.log);
+
+// get phantomizer main instance
+      var phantomizer = ph_libutil.get("main");
+      var meta_manager = phantomizer.get_meta_manager();
+
+      if( meta_manager.is_fresh(meta_file, current_grunt_task) == false ){
+        var sub_tasks = [];
+        var deps = parse_html_and_queue_opimizations(
+          sub_tasks,
+          in_request,
+          in_file,
+          out_file,
+          meta_file,
+          current_target,
+          options,
+          grunt.log);
+
+// create a cache entry, so that later we can regen or check freshness
+        var entry = meta_manager.load(meta_file);
+        entry.append_dependency(__filename);
+        entry.append_dependency(in_file);
+        var wd = process.cwd();
+        entry.append_dependency(wd+"/Gruntfile.js");
+        entry.append_dependency( user_config.project_dir+"/../config.json" );
+        entry.load_dependencies(deps);
+        entry.require_task(current_grunt_task, current_grunt_opt);
+        entry.save(meta_file);
 
 // queue next tasks
-      grunt.task.run( sub_tasks );
+        grunt.task.run( sub_tasks );
+      }else{
+        logger.ok("your build is fresh !\n\t"+in_request);
+      }
 
     });
 
@@ -76,7 +90,6 @@ module.exports = function(grunt) {
 
         file_suffix:'-opt',
 
-        meta_dir:'<%= meta_dir %>',
         out_path:'<%= out_path %>',
         paths:'<%= paths %>',
 
@@ -90,7 +103,6 @@ module.exports = function(grunt) {
 
       var urls_file      = options.urls_file;
 
-      var meta_dir        = options.meta_dir;
       var out_path        = options.out_path;
 
       var current_grunt_task  = this.nameArgs;
@@ -118,21 +130,40 @@ module.exports = function(grunt) {
         , total: raw_urls.length
       });
 
+
+// get phantomizer main instance
+      var phantomizer = ph_libutil.get("main");
+      var meta_manager = phantomizer.get_meta_manager();
+
       var sub_tasks = [];
       for( var n in raw_urls ){
-        parse_html_and_queue_opimizations(
-          sub_tasks,
-          raw_urls[n].raw_in_request,
-          raw_urls[n].in_file,
-          raw_urls[n].out_file,
-          raw_urls[n].raw_in_request+"-"+current_target,
-          user_config.project_dir,
-          current_grunt_task,
-          current_grunt_opt,
-          current_target,
-          options,
-          grunt.verbose);
-        bar.tick();
+        var meta_file = raw_urls[n].raw_in_request+"-"+current_target;
+        if( meta_manager.is_fresh(meta_file, current_grunt_task) == false ){
+          var deps = parse_html_and_queue_opimizations(
+            sub_tasks,
+            raw_urls[n].raw_in_request,
+            raw_urls[n].in_file,
+            raw_urls[n].out_file,
+            meta_file,
+            current_target,
+            options,
+            grunt.verbose);
+
+// create a cache entry, so that later we can regen or check freshness
+          var entry = meta_manager.load(meta_file);
+          entry.append_dependency(raw_urls[n].in_file);
+          entry.append_dependency(__filename);
+          var wd = process.cwd();
+          entry.append_dependency(wd+"/Gruntfile.js");
+          entry.append_dependency( user_config.project_dir+"/../config.json" );
+          entry.load_dependencies(deps);
+          entry.require_task(current_grunt_task, current_grunt_opt);
+          entry.save(meta_file);
+
+          bar.tick();
+        }else{
+          logger.ok("your build is fresh !\n\t"+in_request);
+        }
       }
       grunt.log.ok();
 
@@ -142,19 +173,17 @@ module.exports = function(grunt) {
     });
 
   // html parsing and task queueing
-  function parse_html_and_queue_opimizations(sub_tasks, in_request, in_file, out_file, meta_file, project_dir, current_grunt_task, current_grunt_opt, current_target, options, logger){
+  function parse_html_and_queue_opimizations(sub_tasks, in_request, in_file, out_file, meta_file, current_target, options, logger){
 
     var wd = process.cwd();
     var base_url = path.dirname(in_request);
 
-    var meta_factory = ph_libutil.meta;
     var phantomizer_helper = ph_libutil.phantomizer_helper;
     var html_utils = ph_libutil.html_utils;
     var deps = [];
 
     var file_suffix     = options.file_suffix;
 
-    var meta_dir        = options.meta_dir;
     var out_path        = options.out_path;
     var paths           = options.paths;
 
@@ -168,210 +197,189 @@ module.exports = function(grunt) {
     var requirejs_burl  = options.requirejs_baseUrl;
     var requirejs_paths = options.requirejs_paths;
 
-    var meta_manager = new meta_factory(wd, meta_dir );
-    if( meta_manager.is_fresh(meta_file, current_grunt_task) == false ){
 
-      var html_content = grunt.file.read(in_file).toString();
-      deps.push(in_file);
+    var html_content = grunt.file.read(in_file).toString();
 
-      if ( grunt.file.exists(wd+"/Gruntfile.js")) {
-        deps.push(wd+"/Gruntfile.js");
-      }
-      if ( grunt.file.exists(project_dir+"/../config.json")) {
-        deps.push( project_dir+"/../config.json");
-      }
-
-      /*
-       NOTES that this code should be optimized in the future
-       the html_content is parsed again and again too many times
-       a better model would use an object as a list of reference to html nodes of the document,
-       something like DOM
-       each node reference could be updated in place,
-       removed from the list and deleted from the content
-       added in place
-       ect
-       wihtout having to parse the html string on every changes
-       */
+    /*
+     NOTES that this code should be optimized in the future
+     the html_content is parsed again and again too many times
+     a better model would use an object as a list of reference to html nodes of the document,
+     something like DOM
+     each node reference could be updated in place,
+     removed from the list and deleted from the content
+     added in place
+     ect
+     wihtout having to parse the html string on every changes
+     */
 
 // look up for scripts to strip / merge / inject
-      html_content = html_clean_css(html_content);
-      logger.ok("html cleaned");
+    html_content = html_clean_css(html_content);
+    logger.ok("html cleaned");
 
 
-      if( image_merge ){
-        queue_img_merge(sub_tasks, current_target );
-      }
+    if( image_merge ){
+      queue_img_merge(sub_tasks, current_target );
+    }
 
 // look up for css file to compile <link rel="stylesheet" href="?">
-      var lnodes = html_utils.find_link_nodes(html_content, base_url);
-      ForEachNodeFileFound(lnodes, paths, function(n, node, node_file){
-        deps.push(node_file);
+    var lnodes = html_utils.find_link_nodes(html_content, base_url);
+    ForEachNodeFileFound(lnodes, paths, function(n, node, node_file){
+      deps.push(node_file);
 
-        var osrc = node.src;
-        if( osrc.indexOf("-min") == -1 &&
-          osrc.indexOf(".min") == -1 &&
-          osrc.indexOf(file_suffix) == -1 ){
-          osrc = node.src.replace(".css",file_suffix+".css");
-          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
-        }else{
-          logger.ok("Already minified\n\t"+osrc );
-        }
+      var osrc = node.src;
+      if( osrc.indexOf("-min") == -1 &&
+        osrc.indexOf(".min") == -1 &&
+        osrc.indexOf(file_suffix) == -1 ){
+        osrc = node.src.replace(".css",file_suffix+".css");
+        queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
+      }else{
+        logger.ok("Already minified\n\t"+osrc );
+      }
 
-        if( image_merge &&
-          osrc.indexOf("-im") == -1 ){
-          var tsrc = osrc.replace(file_suffix+".css", ".css");
-          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
-          osrc = tsrc;
-        }else if(image_merge){
-          logger.ok("Already merged image\n\t"+osrc );
-        }
+      if( image_merge &&
+        osrc.indexOf("-im") == -1 ){
+        var tsrc = osrc.replace(file_suffix+".css", ".css");
+        tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
+        queue_css_img_merge( sub_tasks, current_target, out_path, osrc, tsrc, paths );
+        osrc = tsrc;
+      }else if(image_merge){
+        logger.ok("Already merged image\n\t"+osrc );
+      }
 
-        html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-      });
-      logger.ok("<link /> built");
+      html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+    });
+    logger.ok("<link /> built");
 
 // look up for <style /> nodes
-      var snodes = html_utils.find_style_nodes(html_content, base_url);
-      ForEachRuleFileFound(snodes, paths, function(n, node, k, rule, node_file){
-        deps.push(node_file);
+    var snodes = html_utils.find_style_nodes(html_content, base_url);
+    ForEachRuleFileFound(snodes, paths, function(n, node, k, rule, node_file){
+      deps.push(node_file);
 
-        var osrc = rule.src;
+      var osrc = rule.src;
 
-        if( osrc.indexOf("-min") == -1 &&
-          osrc.indexOf(".min") == -1 &&
-          osrc.indexOf(file_suffix) == -1 ){
-          osrc = rule.src.replace(".css",file_suffix+".css");
-          queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
-        }else{
-          logger.ok("Already minified\n\t"+osrc );
-        }
+      if( osrc.indexOf("-min") == -1 &&
+        osrc.indexOf(".min") == -1 &&
+        osrc.indexOf(file_suffix) == -1 ){
+        osrc = rule.src.replace(".css",file_suffix+".css");
+        queue_css_build(sub_tasks, current_target, out_path+osrc, osrc+"", node_file, osrc);
+      }else{
+        logger.ok("Already minified\n\t"+osrc );
+      }
 
-        if( image_merge && osrc.indexOf("-im") == -1 ){
-          var tsrc = osrc.replace(file_suffix+".css", ".css");
-          tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
-          queue_css_img_merge( sub_tasks, current_target, out_path, meta_dir, osrc, tsrc, paths );
-          osrc = tsrc;
-        }else{
-          logger.ok("Already merged image\n\t"+osrc);
-        }
+      if( image_merge && osrc.indexOf("-im") == -1 ){
+        var tsrc = osrc.replace(file_suffix+".css", ".css");
+        tsrc = tsrc.replace(".css", "-im"+file_suffix+".css");
+        queue_css_img_merge( sub_tasks, current_target, out_path, osrc, tsrc, paths );
+        osrc = tsrc;
+      }else{
+        logger.ok("Already merged image\n\t"+osrc);
+      }
 
-        var node_ = node.node.replace(rule.src, osrc);
-        html_content = html_content.replace(node.node, node_);
-        node.node = node_;
-      });
-      logger.ok("<style /> built");
+      var node_ = node.node.replace(rule.src, osrc);
+      html_content = html_content.replace(node.node, node_);
+      node.node = node_;
+    });
+    logger.ok("<style /> built");
 
 
 
 // look up for script files to compile with requirejs
-      if( requirejs_src != false ){
-        var found_rjs = false;
-        for( var nn in requirejs_src ){
+    if( requirejs_src != false ){
+      var found_rjs = false;
+      for( var nn in requirejs_src ){
 // look up for a data-main attached to requirejs url
-          var rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
-          if( rscripts.length > 0 ){
-            logger.ok("building requirejs scripts");
-            found_rjs = true;
+        var rscripts = html_utils.find_rjs_nodes(html_content, requirejs_src[nn], requirejs_burl);
+        if( rscripts.length > 0 ){
+          logger.ok("building requirejs scripts");
+          found_rjs = true;
 
-            ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
-              deps.push(node_file);
-              var tsrc = node.asrc.replace(".js",file_suffix+".js");
-              var msrc = node.asrc.replace(".js","");
-              msrc = msrc.replace(requirejs_burl, "");
+          ForEachNodeFileFound(rscripts, paths, function(n, node, node_file){
+            deps.push(node_file);
+            var tsrc = node.asrc.replace(".js",file_suffix+".js");
+            var msrc = node.asrc.replace(".js","");
+            msrc = msrc.replace(requirejs_burl, "");
 
-              queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+"", msrc);
+            queue_requirejs_build(sub_tasks, current_target, out_path+tsrc, tsrc+"", msrc);
 
 // apply the optimized version of the script in HTML
-              var node_ = "<script src='"+tsrc+"' optimized='true'></script>";
-              html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), "");
-              html_content = html_content.replace(node.node, node_);
-            });
+            var node_ = "<script src='"+tsrc+"' optimized='true'></script>";
+            html_content = html_content.replace(phantomizer_helper.get_r_config(requirejs_burl,requirejs_paths), "");
+            html_content = html_content.replace(node.node, node_);
+          });
 
-            // stops on first requirejs src found
-            break;
-          }
+          // stops on first requirejs src found
+          break;
         }
       }
+    }
 
 
 // look up for script files to compile with uglifyjs
-      if( uglify_js ){
-        var scripts = html_utils.find_scripts_nodes(html_content, base_url);
-        ForEachNodeFileFound(scripts, paths, function(n, node, node_file){
-          if( node_file.indexOf("-min") == -1 &&
-            node_file.indexOf(".min") == -1 &&
-            node_file.indexOf(file_suffix) == -1 ){
-            deps.push(node_file);
-            var osrc = scripts[n].src;
-            var tsrc = osrc.replace(file_suffix+".js", ".js");
-            tsrc = tsrc.replace(".js", "-min"+file_suffix+".js");
+    if( uglify_js ){
+      var scripts = html_utils.find_scripts_nodes(html_content, base_url);
+      ForEachNodeFileFound(scripts, paths, function(n, node, node_file){
+        if( node_file.indexOf("-min") == -1 &&
+          node_file.indexOf(".min") == -1 &&
+          node_file.indexOf(file_suffix) == -1 ){
+          deps.push(node_file);
+          var osrc = scripts[n].src;
+          var tsrc = osrc.replace(file_suffix+".js", ".js");
+          tsrc = tsrc.replace(".js", "-min"+file_suffix+".js");
 
-            queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, meta_dir, tsrc+"", node_file, osrc );
-            var node_ = "<script src='"+tsrc+"'></script>";
-            html_content = html_content.replace(scripts[n].node, node_);
-            logger.ok("Uglifying "+osrc);
-          }else{
-            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
-          }
-        });
-      }
+          queue_uglifyjs_build( sub_tasks, current_target, out_path+tsrc, tsrc+"", node_file, osrc );
+          var node_ = "<script src='"+tsrc+"'></script>";
+          html_content = html_content.replace(scripts[n].node, node_);
+          logger.ok("Uglifying "+osrc);
+        }else{
+          logger.ok("Already minified\n\t"+path.relative(wd,node_file));
+        }
+      });
+    }
 
 // look up for <img src="?" /> file to compile
-      if( imgcompressor ){
-        var inodes = html_utils.find_img_nodes(html_content, base_url);
-        ForEachNodeFileFound(inodes, paths, function(n, node, node_file){
-          if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
-            node_file.indexOf(file_suffix) == -1 ){
-            deps.push(node_file);
-            var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1");
-            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options );
-            html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            logger.ok("Compressing "+node.src);
-          }else{
-            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
-          }
-        });
+    if( imgcompressor ){
+      var inodes = html_utils.find_img_nodes(html_content, base_url);
+      ForEachNodeFileFound(inodes, paths, function(n, node, node_file){
+        if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
+          node_file.indexOf(file_suffix) == -1 ){
+          deps.push(node_file);
+          var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1");
+          queue_img_opt(sub_tasks, current_target, out_path, paths, node_file, node.asrc, osrc, options );
+          html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+          logger.ok("Compressing "+node.src);
+        }else{
+          logger.ok("Already minified\n\t"+path.relative(wd,node_file));
+        }
+      });
 // look up for background:url() file to compile
-        var inodes = html_utils.find_style_nodes(html_content, base_url);
-        ForEachImageFileFound(inodes, paths, function(n, node, node_file){
-          if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
-            node_file.indexOf(file_suffix) == -1 ){
-            deps.push(node_file)
-            var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1")
-            queue_img_opt(sub_tasks, current_target, out_path, meta_dir, paths, node_file, node.asrc, osrc, options );
-            html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
-            logger.ok("Compressing "+node.src);
-          }else{
-            logger.ok("Already minified\n\t"+path.relative(wd,node_file));
-          }
-        });
-        logger.ok("images minified");
-      }
+      var inodes = html_utils.find_style_nodes(html_content, base_url);
+      ForEachImageFileFound(inodes, paths, function(n, node, node_file){
+        if( node_file.match(/[.](png|jpeg|jpg)$/) != null &&
+          node_file.indexOf(file_suffix) == -1 ){
+          deps.push(node_file)
+          var osrc = node.src.replace(new RegExp("[.](png|jpeg|jpg)$"),file_suffix+".$1")
+          queue_img_opt(sub_tasks, current_target, out_path, paths, node_file, node.asrc, osrc, options );
+          html_content = html_content.replace(node.node, node.node.replace(node.src, osrc) );
+          logger.ok("Compressing "+node.src);
+        }else{
+          logger.ok("Already minified\n\t"+path.relative(wd,node_file));
+        }
+      });
+      logger.ok("images minified");
+    }
 
 
 // write optimized html file
-      grunt.file.write(out_file, html_content);
-      logger.ok("HTML File created\n\t"+path.relative(wd,out_file));
+    grunt.file.write(out_file, html_content);
+    logger.ok("HTML File created\n\t"+path.relative(wd,out_file));
 
 // create manifest file
-      if( manifest == true ){
-        queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file );
-        logger.ok("html manifest queued");
-      }
-
-// create a cache entry, so that later we can regen or check freshness
-      var entry = meta_manager.load(meta_file);
-      deps.push(__filename)
-      entry.load_dependencies(deps);
-      entry.require_task(current_grunt_task, current_grunt_opt);
-      entry.save(meta_file);
-
-      return true;
-    }else{
-      logger.ok("your build is fresh !\n\t"+in_request);
-      return false;
+    if( manifest == true ){
+      queue_html_manifest( sub_tasks, current_target, out_path, meta_file, out_file, in_request, out_file );
+      logger.ok("html manifest queued");
     }
+
+    return deps;
   }
 
 
@@ -477,7 +485,7 @@ module.exports = function(grunt) {
     }
   }
 
-  function queue_img_opt( sub_tasks, current_target, out_path, meta_dir, paths, in_file, asrc, osrc, options ){
+  function queue_img_opt( sub_tasks, current_target, out_path, paths, in_file, asrc, osrc, options ){
 
     var jit_target = ""+asrc;
     var task_name = "phantomizer-imgopt";
@@ -487,7 +495,6 @@ module.exports = function(grunt) {
       var task_options = grunt.config(task_name) || {};
       task_options = clone_subtasks_options(task_options, jit_target, current_target);
       task_options[jit_target].options.out_dir = out_path;
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.paths = paths;
       task_options[jit_target].options.in_files = {};
 
@@ -513,7 +520,7 @@ module.exports = function(grunt) {
 
   }
 
-  function queue_uglifyjs_build( sub_tasks, current_target, out_file, meta_dir, meta_file, in_file, in_request ){
+  function queue_uglifyjs_build( sub_tasks, current_target, out_file, meta_file, in_file, in_request ){
 
     var jit_target = ""+in_request;
     var task_name = "phantomizer-uglifyjs";
@@ -522,7 +529,6 @@ module.exports = function(grunt) {
       var task_options = grunt.config(task_name) || {};
       task_options = clone_subtasks_options(task_options, jit_target, current_target);
       if( !task_options[jit_target].files ) task_options[jit_target].files = {};
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.meta_file = meta_file;
       task_options[jit_target].files[out_file] = [in_file];
 
@@ -551,7 +557,7 @@ module.exports = function(grunt) {
     }
   }
 
-  function queue_css_img_merge( sub_tasks, current_target, out_dir, meta_dir, osrc, tsrc, paths ){
+  function queue_css_img_merge( sub_tasks, current_target, out_dir, osrc, tsrc, paths ){
 
     var merge_options = grunt.config("phantomizer-gm-merge") || {};
     var map = merge_options.options.in_files;
@@ -564,7 +570,6 @@ module.exports = function(grunt) {
 
       task_options = clone_subtasks_options(task_options, jit_target, current_target)
       task_options[jit_target].options.in_request = osrc;
-      task_options[jit_target].options.meta_dir = meta_dir;
       task_options[jit_target].options.out_file = out_dir+tsrc;
       task_options[jit_target].options.meta_file = tsrc+"";
       task_options[jit_target].options.paths = paths;
