@@ -75,7 +75,8 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         <p>get phantomizer main instance</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> phantomizer = ph_libutil.get(<span class="hljs-string">"main"</span>);
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> Phantomizer = ph_libutil.Phantomizer;
+      <span class="hljs-keyword">var</span> phantomizer = <span class="hljs-keyword">new</span> Phantomizer(process.cwd(),grunt);
       <span class="hljs-keyword">var</span> meta_manager = phantomizer.get_meta_manager();
 
       <span class="hljs-keyword">if</span>( meta_manager.is_fresh(meta_file, current_grunt_task) == <span class="hljs-literal">false</span> ){
@@ -177,7 +178,8 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
         <p>get phantomizer main instance</p>
 
         
-          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> phantomizer = ph_libutil.get(<span class="hljs-string">"main"</span>);
+          <div class='highlight'><pre>      <span class="hljs-keyword">var</span> Phantomizer = ph_libutil.Phantomizer;
+      <span class="hljs-keyword">var</span> phantomizer = <span class="hljs-keyword">new</span> Phantomizer(process.cwd(),grunt);
       <span class="hljs-keyword">var</span> meta_manager = phantomizer.get_meta_manager();
 
       <span class="hljs-keyword">var</span> sub_tasks = [];
