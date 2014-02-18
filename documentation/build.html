@@ -66,7 +66,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
       <span class="hljs-keyword">var</span> current_target  = options.as_of_target;
       <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
       <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
-      <span class="hljs-keyword">var</span> user_config = grunt.config();
 
       grunt.log.ok(<span class="hljs-string">"Parse and optimize HTML assets: "</span>+in_request);</pre></div>
         
@@ -99,9 +98,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
           <div class='highlight'><pre>        <span class="hljs-keyword">var</span> entry = meta_manager.load(meta_file);
         entry.append_dependency(__filename);
         entry.append_dependency(in_file);
-        <span class="hljs-keyword">var</span> wd = process.cwd();
-        entry.append_dependency(wd+<span class="hljs-string">"/Gruntfile.js"</span>);
-        entry.append_dependency( user_config.project_dir+<span class="hljs-string">"/../config.json"</span> );
         entry.load_dependencies(deps);
         entry.require_task(current_grunt_task, current_grunt_opt);
         entry.save(meta_file);</pre></div>
@@ -144,7 +140,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
 
       <span class="hljs-keyword">var</span> current_grunt_task  = <span class="hljs-keyword">this</span>.nameArgs;
       <span class="hljs-keyword">var</span> current_grunt_opt   = <span class="hljs-keyword">this</span>.options();
-      <span class="hljs-keyword">var</span> user_config = grunt.config();
 
 
       <span class="hljs-keyword">var</span> current_target  = options.as_of_target;</pre></div>
@@ -204,9 +199,6 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
           <div class='highlight'><pre>          <span class="hljs-keyword">var</span> entry = meta_manager.load(meta_file);
           entry.append_dependency(raw_urls[n].in_file);
           entry.append_dependency(__filename);
-          <span class="hljs-keyword">var</span> wd = process.cwd();
-          entry.append_dependency(wd+<span class="hljs-string">"/Gruntfile.js"</span>);
-          entry.append_dependency( user_config.project_dir+<span class="hljs-string">"/../config.json"</span> );
           entry.load_dependencies(deps);
           entry.require_task(current_grunt_task, current_grunt_opt);
           entry.save(meta_file);
@@ -595,7 +587,7 @@ module.exports = <span class="hljs-function"><span class="hljs-keyword">function
     <span class="hljs-keyword">if</span>( sub_tasks.indexOf(task_name+<span class="hljs-string">":"</span>+jit_target) == -<span class="hljs-number">1</span> ){
       <span class="hljs-keyword">var</span> task_options = grunt.config(task_name) || {};
 
-      task_options = clone_subtasks_options(task_options, jit_target, current_target)
+      task_options = clone_subtasks_options(task_options, jit_target, current_target);
       task_options[jit_target].options.in_file = in_file;
       task_options[jit_target].options.out_file = out_file;
       task_options[jit_target].options.meta_file = meta_file;
