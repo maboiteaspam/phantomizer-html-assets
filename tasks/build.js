@@ -41,7 +41,6 @@ module.exports = function(grunt) {
       var current_target  = options.as_of_target;
       var current_grunt_task  = this.nameArgs;
       var current_grunt_opt   = this.options();
-      var user_config = grunt.config();
 
       grunt.log.ok("Parse and optimize HTML assets: "+in_request);
 
@@ -67,9 +66,6 @@ module.exports = function(grunt) {
         var entry = meta_manager.load(meta_file);
         entry.append_dependency(__filename);
         entry.append_dependency(in_file);
-        var wd = process.cwd();
-        entry.append_dependency(wd+"/Gruntfile.js");
-        entry.append_dependency( user_config.project_dir+"/../config.json" );
         entry.load_dependencies(deps);
         entry.require_task(current_grunt_task, current_grunt_opt);
         entry.save(meta_file);
@@ -108,7 +104,6 @@ module.exports = function(grunt) {
 
       var current_grunt_task  = this.nameArgs;
       var current_grunt_opt   = this.options();
-      var user_config = grunt.config();
 
 
       var current_target  = options.as_of_target;
@@ -155,9 +150,6 @@ module.exports = function(grunt) {
           var entry = meta_manager.load(meta_file);
           entry.append_dependency(raw_urls[n].in_file);
           entry.append_dependency(__filename);
-          var wd = process.cwd();
-          entry.append_dependency(wd+"/Gruntfile.js");
-          entry.append_dependency( user_config.project_dir+"/../config.json" );
           entry.load_dependencies(deps);
           entry.require_task(current_grunt_task, current_grunt_opt);
           entry.save(meta_file);
@@ -472,7 +464,7 @@ module.exports = function(grunt) {
     if( sub_tasks.indexOf(task_name+":"+jit_target) == -1 ){
       var task_options = grunt.config(task_name) || {};
 
-      task_options = clone_subtasks_options(task_options, jit_target, current_target)
+      task_options = clone_subtasks_options(task_options, jit_target, current_target);
       task_options[jit_target].options.in_file = in_file;
       task_options[jit_target].options.out_file = out_file;
       task_options[jit_target].options.meta_file = meta_file;
