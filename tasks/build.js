@@ -29,7 +29,7 @@ module.exports = function(grunt) {
 
         as_of_target: this.target
       });
-      grunt.verbose.writeflags(options,"htmlassets");
+      grunt.verbose.writeflags(options, "htmlassets");
 
       var meta_file       = options.meta_file;
       var in_file         = options.in_file;
@@ -73,7 +73,7 @@ module.exports = function(grunt) {
 // queue next tasks
         grunt.task.run( sub_tasks );
       }else{
-        logger.ok("your build is fresh !\n\t"+in_request);
+          grunt.log.ok("your build is fresh !\n\t"+in_request);
       }
 
     });
@@ -156,7 +156,7 @@ module.exports = function(grunt) {
 
           bar.tick();
         }else{
-          logger.ok("your build is fresh !\n\t"+in_request);
+            grunt.log.ok("your build is fresh !\n\t"+raw_urls[n].raw_in_request);
         }
       }
       grunt.log.ok();
